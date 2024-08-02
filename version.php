@@ -17,8 +17,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_attendancewebhook';
-$plugin->release = '1.3.3';
-$plugin->version = 2024072400;
+$plugin->release = '1.4.3';
+$plugin->version = 2024080200;
 $plugin->requires = 2016120505; // Moodle 3.2.5.
 $plugin->dependencies = [
     'mod_attendance' => ANY_VERSION

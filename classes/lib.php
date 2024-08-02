@@ -20,6 +20,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/course/lib.php');
 require_once($CFG->dirroot.'/user/lib.php');
+require_once("$CFG->dirroot/mod/listgrades/locallib.php");
 
 class lib {
 
@@ -32,9 +33,9 @@ class lib {
     );
 
     const STATUS_ACRONYMS = array(
-        'UNKNOWN' => 'A',
-        'ON_SITE' => 'P',
-        'DISTANCE' => 'D'
+        'UNKNOWN' => 'AS',
+        'ON_SITE' => 'PR',
+        'DISTANCE' => 'DS'
     );
 
     public static function get_event() {
@@ -43,7 +44,7 @@ class lib {
         $object = json_decode($json);
         $event = new event($object);
         $message = 'Activity of type '.$event->get_topic()->get_type().'.';
-        if ($event->get_topic()->get_type() !== 'COMMON') {
+        if ($event->get_topic()->get_type() !== 'COMMON') { // TODO: type COMMON???
             self::log_error($message);
             return false;
         } else {
@@ -88,11 +89,23 @@ class lib {
             return $courses[array_keys($courses)[0]];
         }
     }
-
+    /**
+     * @param $config
+     * @param $course
+     * @param $module
+     * @return bool|\stdClass
+     */
     public static function get_course_module($config, $course, $module) {
-        global $DB;
-        $params = array('course' => $course->id, 'module' => $module->id, 'idnumber' => self::CM_IDNUMBER);
-        $cms = $DB->get_records('course_modules', $params);
+        global $DB; // TODO: Use cm_info instead of course_modules.
+
+        // Search attendance module in course with idnumber = self::CM_IDNUMBER using cached cm_modinfo.
+        $cminfo = get_fast_modinfo($course);
+        $cms = $cminfo->get_instances_of('attendance');
+        $cms = array_filter($cms, function ($cm) {
+            return $cm->idnumber === self::CM_IDNUMBER && $cm->deletioninprogress === 0;
+        });
+        $cm = reset($cms);
+        
         $message = count($cms).' course modules(s) '.json_encode($params).' found.';
         if (count($cms) > 1) {
             self::log_error($message);
@@ -103,11 +116,14 @@ class lib {
                 $cm = $cms[array_keys($cms)[0]];
                 $params = array('id' => $cm->instance);
                 $attendance = $DB->get_record('attendance', $params);
-                if ($attendance->name != $config->module_name) {
+
+                // Force the name. Why?
+                if ($attendance->name != $config->module_name) { // TODO: Why name is restored?
                     self::log_info('Module name modified.');
                     set_coursemodule_name($cm->id, $config->module_name);
                     self::log_info('Module name updated.');
                 }
+                // Force to be in section $config->module_section.
                 $params = array('course' => $course->id, 'section' => $config->module_section);
                 $section = $DB->get_record('course_sections', $params);
                 if (!$section || $section->id != $cm->section) {
@@ -129,10 +145,10 @@ class lib {
                 $moduleinfo->introeditor = array('text' => '', 'format' => FORMAT_PLAIN);
                 $moduleinfo->cmidnumber = self::CM_IDNUMBER;
                 $moduleinfo->name = $config->module_name;
-                create_module($moduleinfo);
+                $cm = create_module($moduleinfo);
                 self::log_info('Course module created.');
-                $cm = $DB->get_record('course_modules', $params);
-                $DB->delete_records('attendance_statuses', array('attendanceid' => $cm->instance));
+                // $cm = $DB->get_record('course_modules', $params); // This gets also cms in deletion progress state.
+                $DB->delete_records('attendance_statuses', array('attendanceid' => $cm->instance)); // TODO: This is not necessary.
                 foreach (self::STATUS_DESCRIPTIONS as $name => $description) {
                     $status = new \stdClass();
                     $status->attendanceid = $cm->instance;
@@ -176,25 +192,49 @@ class lib {
             }
         }
     }
-
+    // public static function find_user_by_userid($config, $userid) {
+    //     global $DB;
+    //     $params = array($config->user_id => $userid);
+    //     $users = $DB->get_records('user', $params);
+    //     $message = count($users).' users(s) '.json_encode($params).' found.';
+    //     if (count($users) != 1) {
+    //         self::log_error($message);
+    //         return false;
+    //     } else {
+    //         self::log_info($message);
+    //         return reset($users);
+    //     }
+    // }
     public static function get_user_enrol($config, $attendance, $course) {
         global $DB;
-        $sql = "SELECT u.* FROM {user} u" .
-            " JOIN {user_enrolments} ue ON ue.userid = u.id" .
-            " JOIN {enrol} e ON (e.id = ue.enrolid AND e.courseid = :courseid)" .
-            " WHERE u." . $config->user_id . " = :" . $config->user_id;
-        $params = array($config->user_id => self::get_member_id($config, $attendance->get_member()), 'courseid' => $course->id);
-        $users = $DB->get_records_sql($sql, $params);
-        $message = count($users).' course user(s) '.json_encode($params).' found.';
-        self::log_info($message);
-        if (count($users) != 1) {
+        // TODO: Upe Moodle API.
+        $user = lib::get_user($config, $attendance->get_member());
+        $context = \context_course::instance($course->id);
+        // Check if user is enrolled in course by userid (is cached).
+        if (!is_enrolled($context, $user->id)) {
             return false;
         } else {
-            return $users[array_keys($users)[0]];
+            return $user;
         }
+        // $sql = "SELECT u.* FROM {user} u" .
+        //     " JOIN {user_enrolments} ue ON ue.userid = u.id" .
+        //     " JOIN {enrol} e ON (e.id = ue.enrolid AND e.courseid = :courseid)" .
+        //     " WHERE u." . $config->user_id . " = :" . $config->user_id;
+        // $params = array($config->user_id => self::get_member_id($config, $attendance->get_member()), 'courseid' => $course->id);
+        // $users = $DB->get_records_sql($sql, $params);
+        // $message = count($users).' course user(s) '.json_encode($params).' found.';
+        // self::log_info($message);
+        // if (count($users) != 1) {
+        //     return false;
+        // } else {
+        //     return $users[array_keys($users)[0]];
+        // }
     }
-
-    private static function get_member_id($config, $member) {
+    /**
+     * Returns the value of the field configured to be used as member id.
+     * @see settings.php
+     */
+    private static function get_member_id($config, member $member) {
         if ($config->member_id === 'username') {
             return $member->get_username();
         } else if ($config->member_id === 'email') {
@@ -213,7 +253,10 @@ class lib {
             return true;
         }
     }
-
+    
+    /**
+     * Gets or creates a temporary user for the given attendance.
+     */
     public static function get_tempuser($attendance, $course) {
         global $DB;
         $params = array('email' => $attendance->get_member()->get_email(), 'courseid' => $course->id);
@@ -272,7 +315,7 @@ class lib {
         $params = array('sessionid' => $session->id, 'studentid' => $user ? $user->id : $tempuser->studentid);
         $logs = $DB->get_records('attendance_log', $params);
         $message = count($logs).' attendance log(s) '.json_encode($params).' found.';
-        if (count($logs) > 1) {
+        if (count($logs) > 1) { // TODO: Why a log can't be overwritten?
             self::log_error($message);
             return false;
         } else {
@@ -287,6 +330,8 @@ class lib {
                 $log->timetaken = $attendance->get_server_time();
                 $log->remarks = $attendance->get_attendance_note();
                 $log->id = $DB->insert_record('attendance_log', $log);
+                // TODO use  save_log($sesslog) instead of insert_record
+               // \mod_attendance_structure::save_log($sesslog) // TODO
                 self::log_info('Attendance log created.');
                 return $log;
             }
@@ -367,7 +412,7 @@ class lib {
         }
     }
 
-    private static function get_user($config, $member) {
+    public static function get_user($config, member $member) {
         global $DB;
         $params = array($config->user_id => self::get_member_id($config, $member));
         $users = $DB->get_records('user', $params);

@@ -53,7 +53,7 @@ if ($hassiteconfig) {
             array('shortname' => 'shortname', 'idnumber' => 'idnumber')
         )
     );
-
+    // Field for matching userid.
     $settings->add(
         new admin_setting_configselect(
             'local_attendancewebhook/user_id',
@@ -91,5 +91,62 @@ if ($hassiteconfig) {
             0
         )
     );
+
+    // Integration REST services.
+    // Enable REST services.
+    $settings->add(
+        new admin_setting_configcheckbox(
+            'local_attendancewebhook/restservices_enabled',
+            new lang_string('restservices_enabled_name', 'local_attendancewebhook'),
+            new lang_string('restservices_enabled_description', 'local_attendancewebhook'),
+            1
+        )
+    );
+    // Generate random API Key.
+    $defaultapikey = bin2hex(random_bytes(32));
+
+    // If REST services is enabled, show the following settings.
+    // Apikey.
+    $settings->add(
+        new admin_setting_configtext(
+            'local_attendancewebhook/apikey',
+            new lang_string('apikey_name', 'local_attendancewebhook'),
+            new lang_string('apikey_description', 'local_attendancewebhook'),
+            $defaultapikey,
+            PARAM_TEXT,
+            64
+        )
+    );
+    // API user.
+    $settings->add(
+        new admin_setting_configtext(
+            'local_attendancewebhook/apiuser',
+            new lang_string('restservices_apiuser_name', 'local_attendancewebhook'),
+            new lang_string('restservices_apiuser_description', 'local_attendancewebhook'),
+            'attendance_client',
+            PARAM_TEXT,
+            64
+        )
+    );
+    $fields = get_user_fieldnames();
+    require_once($CFG->dirroot . '/user/profile/lib.php');
+    $customfields = profile_get_custom_fields();
+    $userfields = [];
+    // Make the keys string values and not indexes.
+    foreach ($fields as $field) {
+        $userfields[$field] = $field;
+        $basicfields[$field] = $field;
+    }
+    foreach ($customfields as $field) {
+        $userfields[$field->shortname] = $field->name;
+    }
+    // Field for NIA.
+    $settings->add(new admin_setting_configselect(
+        'local_attendancewebhook/field_NIA',
+        get_string('restservices_fieldNIA', 'local_attendancewebhook'),
+        get_string('restservices_fieldNIA_description', 'local_attendancewebhook'),
+        'idnumber',
+        $userfields
+    ));
 
 }

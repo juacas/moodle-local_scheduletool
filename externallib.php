@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+
 defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->dirroot.'/lib/externallib.php');
@@ -35,7 +36,7 @@ class local_attendancewebhook_external extends external_api {
             require_capability('mod/attendance:manageattendances', $context);
             require_capability('mod/attendance:takeattendances', $context);
             require_capability('mod/attendance:changeattendances', $context);
-            require_capability('mod/attendance:managetemporaryusers', $context);
+            require_capability('mod/attendance:managetemporaryusers', $context); // TODO: Check conditionally.
             require_capability('moodle/user:create', $context);
             require_capability('moodle/user:update', $context);
 
@@ -48,32 +49,57 @@ class local_attendancewebhook_external extends external_api {
             if (!$config) {
                 return false;
             }
+            $course = null;
+            $cm = null;
+            $session = null;
+            $errors = [];
 
-            $module = \local_attendancewebhook\lib::get_module();
-            if (!$module) {
-                \local_attendancewebhook\lib::notify_error($config, $event);
-                return false;
+            // If Rest services are enabled, check topicId format.
+            if ($config->restservices_enabled) {
+                global $DB;
+                $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
+                $att_target->errors = &$errors;
+                $att_target->register_attendances();
+
+                if (count($errors) > 0) {
+                    \local_attendancewebhook\lib::notify_error($config, $event, $errors);
+                }
+                return true;
             }
 
-            $course = \local_attendancewebhook\lib::get_course($config, $event);
-            if (!$course) {
-                \local_attendancewebhook\lib::notify_error($config, $event);
-                return false;
+            
+            if ($course == null) {
+                $course = \local_attendancewebhook\lib::get_course($config, $event);
+                if (!$course) {
+                    \local_attendancewebhook\lib::notify_error($config, $event);
+                    return false;
+                }
             }
-
-            $cm = \local_attendancewebhook\lib::get_course_module($config, $course, $module);
-            if (!$cm) {
-                \local_attendancewebhook\lib::notify_error($config, $event);
-                return false;
+            if ($cm == null) {
+                $module = \local_attendancewebhook\lib::get_module();
+                if (!$module) {
+                    \local_attendancewebhook\lib::notify_error($config, $event);
+                    return false;
+                }
+                // Find or create ad-hoc attendance instance.
+                $cm = \local_attendancewebhook\lib::get_course_module($config, $course, $module);
+                if (!$cm) {
+                    \local_attendancewebhook\lib::notify_error($config, $event);
+                    return false;
+                }
             }
-
-            $session = \local_attendancewebhook\lib::get_session($cm, $event);
-            if (!$session) {
-                \local_attendancewebhook\lib::notify_error($config, $event);
-                return false;
+            if ($session == null) {      
+                // Create a new session with the given event. Errors if exists.
+                $session = \local_attendancewebhook\lib::get_session($cm, $event);
+                if (!$session) {
+                    \local_attendancewebhook\lib::notify_error($config, $event);
+                    return false;
+                }
             }
+            
 
-            $errors = array();
+            
+            $tempuser = null;
             foreach ($event->get_attendances() as &$attendance) {
                 $user = \local_attendancewebhook\lib::get_user_enrol($config, $attendance, $course);
                 if (!$user) {
@@ -87,7 +113,7 @@ class local_attendancewebhook_external extends external_api {
                         }
                     }
                 }
-
+                // Get the list of possible statuses.
                 $status = \local_attendancewebhook\lib::get_status($cm, $attendance);
                 if (!$status) {
                     $errors[] = $attendance;

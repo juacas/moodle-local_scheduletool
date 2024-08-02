@@ -17,7 +17,7 @@
 $string['course_id_description'] = 'Moodle course ID corresponding to attendance activity ID (topic_id)';
 $string['course_id_name'] = 'Course ID';
 $string['invalid_data'] = 'Invalid data.';
-$string['member_id_description'] = 'Attendance member ID corresponding to moodle user ID';
+$string['member_id_description'] = 'JSON Attendance member field to use to match moodle user ID field.';
 $string['member_id_name'] = 'Member ID';
 $string['module_name_description'] = 'Moodle attendance module name';
 $string['module_name_name'] = 'Module name';
@@ -35,5 +35,14 @@ $string['privacy:metadata'] = 'Attendance Webhook plugin stores data on behalf o
 $string['messageprovider:error'] = 'Attendance Webhook notifications error events';
 $string['tempusers_enabled_description'] = 'Enable or disable the creation of temporary users';
 $string['tempusers_enabled_name'] = 'Temporary users';
-$string['user_id_description'] = 'Moodle user ID corresponding to attendance member ID';
+$string['user_id_description'] = 'Moodle user ID field to use for matching attendance member ID field in JSON';
 $string['user_id_name'] = 'User ID';
+
+$string['restservices_enabled_name'] = 'Enable REST services';
+$string['restservices_enabled_description'] = 'Enable or disable REST services';
+$strinf['restservices_apikey_name'] = 'API key';
+$string['restservices_apikey_description'] = 'API key for REST services access';
+$string['restservices_apiuser_name'] = 'API user';
+$string['restservices_apiuser_description'] = 'API user for REST services client';
+$string['restservices_fieldNIA'] = 'User field for NIA';
+$string['restservices_fieldNIA_description'] = 'User field where NIA is stored';

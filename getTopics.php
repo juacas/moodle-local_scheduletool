@@ -1,0 +1,159 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Give the attendance-abled events to the app.
+ * Return a JSON with the events that are suitable to attendance marking:
+ * - Courses: as original version.
+ * - Attendance sessions: topicId encoded with course-module-session.
+ * - HybridTeaching sessions: topicId encoded with course-module-session. (TODO)
+ *
+ * • topicId: Identificador único de la asignatura. Es un campo obligatorio y es muy importante
+    que sea único, no puede haber varias asignaturas con el mismo identificador para un 
+    organizador.
+    • name: Nombre de la asignatura. Es un campo obligatorio si no se envía el campo names.
+    • names: Nombre de la asignatura en varios idiomas. Este campo es obligatorio si no se 
+    envía el campo anterior name.
+    • info: información adicional al nombre de la asignatura que permite al organizador 
+    identificar sin ningún género de dudas la asignatura al incluir la titulación, el grupo, el curso, 
+    etc. Es un campo obligatorio, aunque su contenido puede estar vacío.
+    • infos: información adicional de la asignatura en varios idiomas. Es obligatorio si no se 
+    envía el campo anterior info.
+    • calendar: objeto opcional con los horarios de la asignatura y los siguientes campos:
+    o startDate: fecha inicial del curso o del período en el que aplican los horarios. El 
+    formato de la fecha debe ser YYYY-MM-DD.
+    o endDate: fecha final del curso o del período en el que aplican los horarios. El 
+    formato de la fecha debe ser YYYY-MM-DD.
+    o timetables: array de horarios y que contienen los siguientes campos:
+    § weekdays: días de la semana en que se aplica el horario, indicando sus 
+    iniciales en mayúsculas y separados por comas, con excepción del 
+    miércoles al que le corresponde una “X”
+    § startTime: hora inicial de la actividad
+    § endTime: hora final de la actividad
+    § info: información adicional donde se puede añadir información del aula o 
+    cualquier otro dato pertinente.
+    § infos: información adicional del horario en varios idiomas. Es obligatorio 
+    si se envía un horario y no se envía el campo anterior info.
+    • externalIntegration: booleano que indica si la actividad debe ser integrada con algún 
+    sistema externo, como por ejemplo Moodle. Si su valor es true las asistencias a la actividad 
+    se enviarán a los sistemas externos con los que se haya integrado la aplicación. Si su 
+    valor es false esas asistencias no se enviarán al sistema externo. Si no se devuelve en la 
+    llamada se asume que su valor es true.
+    • tag: etiqueta asociada a la actividad que puede servir posteriormente para agrupar 
+    actividades o para filtrar las asistencias. Cada etiqueta puede tener un significado diferente 
+    en cada instalación. Por ejemplo, cada etiqueta podría representar el centro donde se 
+    AppCRUE – Control de asistencia. API de integración 
+    REST 7
+    imparte la asignatura, el departamento, la titulación, etc. Su valor no debe incluir espacios 
+    en blanco. Es un parámetro opcional.
+ * @package    local_attendancewebhook
+ * @copyright  2021 University of Valladoild, Spain
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+require_once(__DIR__ . '/../../config.php');
+require_once($CFG->libdir.'/filelib.php');
+/** @var moodle_database $DB */
+global $DB;
+
+if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
+    header('HTTP/1.1 405 Method Not Allowed');
+    die();
+    // Better act as a service don't throw new moodle_exception('servicedonotexist', 'error').
+}
+try {
+    $apikey = required_param('apikey', PARAM_ALPHANUMEXT);
+    $apiuser = required_param('apiuser', PARAM_ALPHANUMEXT);
+    $userid = required_param('userid', PARAM_ALPHANUMEXT);
+} catch (moodle_exception $e) {
+    header('HTTP/1.0 401 Bad Request');
+    die();
+}
+
+$PAGE->set_context(null);
+header('Content-Type: text/json; charset=utf-8');
+
+// Check apikey and apiuser aginst config.
+if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != get_config('local_attendancewebhook', 'apiuser')) {
+    header('HTTP/1.0 401 Unauthorized');
+    die();
+}
+// Find userid.
+$useridfield = get_config('local_attendancewebhook', 'user_id');
+$user = $DB->get_record('user', [$useridfield => $userid], '*');
+
+if (!$user) {
+    header('HTTP/1.0 404 Not Found');
+    die();
+}
+
+$topics = [];
+
+// Courses can't be topics without POD.
+// TODO: Get Timetables from POD.
+if (true) {
+    // Collect all courses in which the user is teacher: Has any of:
+    // 'mod/attendance:addinstance'
+    // 'mod/hybridteaching:addinstance'
+    $courses = get_user_capability_course('mod/attendance:addinstance', $user->id);
+    foreach($courses as $course) {
+        // Get course data.
+        $course = $DB->get_record('course', array('id' => $course->id), '*', MUST_EXIST);
+        $topics[] = [
+            'topicId' => 'course-' . $course->id,
+            'name' => $course->shortname,
+            'info' => $course->fullname,
+            'externalIntegration' => true,
+            'tag' => 'course',
+        ];
+    }
+}
+
+// Get all attendance sessions.
+$courses = get_user_capability_course('mod/attendance:addinstance', $user->id);
+$coursesid = array_map(function ($course) {
+    return $course->id;
+}, $courses);
+$attendances = $DB->get_records_list('attendance', 'course', $coursesid);
+foreach ($attendances as $attendance) {
+    $cm             = get_coursemodule_from_instance('attendance', $attendance->id, 0, false, MUST_EXIST);
+    $course         = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
+    $context = context_module::instance($cm->id);
+    $att = new mod_attendance_structure($attendance, $cm, $course, $context);
+    $sessions = $att->get_current_sessions();
+    // Each session is a topic.
+    foreach ($sessions as $session) {
+        // Create info text from dates.
+        $description = content_to_text($session->description, FORMAT_MOODLE);
+        $info = "{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')';
+        $topics[] = [
+            'topicId' => 'attendance-' . $cm->id . '-' . $session->id,
+            'name' => $course->shortname . ":" . $att->name . " " . $description,
+            'info' => $info,
+            'externalIntegration' => true,
+            'tag' => "{$course->shortname}/{$att->name}/{$description}/{$info}",
+        ];
+    }
+}
+
+// mod/hybridteaching:createsessions
+// mod/attendance:manageattendances
+
+
+
+$response = json_encode($topics, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
+
+echo $response;
