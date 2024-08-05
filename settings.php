@@ -110,8 +110,8 @@ if ($hassiteconfig) {
     $settings->add(
         new admin_setting_configtext(
             'local_attendancewebhook/apikey',
-            new lang_string('apikey_name', 'local_attendancewebhook'),
-            new lang_string('apikey_description', 'local_attendancewebhook'),
+            new lang_string('restservices_apikey_name', 'local_attendancewebhook'),
+            new lang_string('restservices_apikey_name_description', 'local_attendancewebhook'),
             $defaultapikey,
             PARAM_TEXT,
             64

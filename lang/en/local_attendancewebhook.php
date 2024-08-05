@@ -40,7 +40,7 @@ $string['user_id_name'] = 'User ID';
 
 $string['restservices_enabled_name'] = 'Enable REST services';
 $string['restservices_enabled_description'] = 'Enable or disable REST services';
-$strinf['restservices_apikey_name'] = 'API key';
+$string['restservices_apikey_name'] = 'API key';
 $string['restservices_apikey_description'] = 'API key for REST services access';
 $string['restservices_apiuser_name'] = 'API user';
 $string['restservices_apiuser_description'] = 'API user for REST services client';
