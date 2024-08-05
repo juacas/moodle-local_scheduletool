@@ -63,7 +63,7 @@
  * @copyright  2021 University of Valladoild, Spain
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
+namespace local_attendancewebhook;
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir.'/filelib.php');
 /** @var moodle_database $DB */
@@ -99,61 +99,22 @@ if (!$user) {
     header('HTTP/1.0 404 Not Found');
     die();
 }
-
-$topics = [];
-
-// Courses can't be topics without POD.
-// TODO: Get Timetables from POD.
-if (true) {
-    // Collect all courses in which the user is teacher: Has any of:
-    // 'mod/attendance:addinstance'
-    // 'mod/hybridteaching:addinstance'
-    $courses = get_user_capability_course('mod/attendance:addinstance', $user->id);
-    foreach($courses as $course) {
-        // Get course data.
-        $course = $DB->get_record('course', array('id' => $course->id), '*', MUST_EXIST);
-        $topics[] = [
-            'topicId' => 'course-' . $course->id,
-            'name' => $course->shortname,
-            'info' => $course->fullname,
-            'externalIntegration' => true,
-            'tag' => 'course',
-        ];
+try {
+    $topics = [];
+    
+    // Courses can't be topics without POD.
+    // TODO: Get Timetables from POD.
+    if (true) {
+      $topics[] = course_target::get_topics($user);
     }
+    
+    $topics[] = modattendance_target::get_topics($user);
+    //$topics[] = hybridteaching_target::get_topics($user);
+    
+    $response = json_encode($topics, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
+    
+    echo $response;
+} catch (Exception $e) {
+    header('HTTP/1.0 500 Internal Server Error: ' . $e->getMessage());
+    die();
 }
-
-// Get all attendance sessions.
-$courses = get_user_capability_course('mod/attendance:addinstance', $user->id);
-$coursesid = array_map(function ($course) {
-    return $course->id;
-}, $courses);
-$attendances = $DB->get_records_list('attendance', 'course', $coursesid);
-foreach ($attendances as $attendance) {
-    $cm             = get_coursemodule_from_instance('attendance', $attendance->id, 0, false, MUST_EXIST);
-    $course         = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
-    $context = context_module::instance($cm->id);
-    $att = new mod_attendance_structure($attendance, $cm, $course, $context);
-    $sessions = $att->get_current_sessions();
-    // Each session is a topic.
-    foreach ($sessions as $session) {
-        // Create info text from dates.
-        $description = content_to_text($session->description, FORMAT_MOODLE);
-        $info = "{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')';
-        $topics[] = [
-            'topicId' => 'attendance-' . $cm->id . '-' . $session->id,
-            'name' => $course->shortname . ":" . $att->name . " " . $description,
-            'info' => $info,
-            'externalIntegration' => true,
-            'tag' => "{$course->shortname}/{$att->name}/{$description}/{$info}",
-        ];
-    }
-}
-
-// mod/hybridteaching:createsessions
-// mod/attendance:manageattendances
-
-
-
-$response = json_encode($topics, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
-
-echo $response;

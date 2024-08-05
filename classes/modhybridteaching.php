@@ -15,27 +15,36 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace local_attendancewebhook;
-
+use \mod_hybridteaching\controller\sessions_controller;
+use \mod_hybridteaching\controller\attendance_controller;
 defined('MOODLE_INTERNAL') || die();
 
-require_once ($CFG->dirroot . '/mod/attendance/locallib.php');
+require_once ($CFG->dirroot . '/mod/hybridteaching/locallib.php');
 /**
  * Class to implement entities that can be targets of attendance marking.
  */
-class modattendance_target extends target_base
+class modhybridteaching_target extends target_base
 {
-    public \mod_attendance_structure $att_struct;
+    public sessions_controller $sessioncontroller;
+    public attendance_controller $attendancecontroller;
+
+    /**
+     * Constructor.
+     * @param event $event
+     * @param \stdClass $config
+     */
     public function __construct(event $event, $config)
     {
         parent::__construct($event, $config);
-        $this->load_modattendance();
+        $this->load_modhybridteaching();
     }
-    protected function load_modattendance()
+    protected function load_modhybridteaching()
     {
         global $DB;
         if ($this->cm) {
-            $attendance = $DB->get_record('attendance', array('id' => $this->cm->instance), '*', MUST_EXIST);
-            $this->att_struct = new \mod_attendance_structure($attendance, $this->cm, $this->course, $this->context);
+            $hybridteaching = $DB->get_record('hybridteaching', array('id' => $this->cm->instance), '*', MUST_EXIST);
+            $this->sessioncontroller = new sessions_controller($hybridteaching);
+            $this->attendancecontroller =  new attendance_controller($hybridteaching);
         }
     }
     public function get_session()

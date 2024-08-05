@@ -211,7 +211,7 @@ class lib {
         $user = lib::get_user($config, $attendance->get_member());
         $context = \context_course::instance($course->id);
         // Check if user is enrolled in course by userid (is cached).
-        if (!is_enrolled($context, $user->id)) {
+        if (!$user || !is_enrolled($context, $user->id)) {
             return false;
         } else {
             return $user;

@@ -138,4 +138,11 @@ abstract class target_base
      * @param \local_attendancewebhook\attendance $attendance
      */
     public abstract function register_attendance(attendance $attendance);
+    /**
+     * Static function to get a list of topics for a user.
+     * @param \stdClass $user user object.
+     * @return topic[] array of topic objects.
+     */
+     public abstract static function get_topics(\stdClass $user): array;
+    
 }

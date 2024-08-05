@@ -33,7 +33,7 @@ class course_target extends modattendance_target
         global $DB;
         $topicparts = explode('-', $topicId);
         if (count($topicparts) != 2) {
-           throw new \Exception('Invalid topicId format.' . $topicId);
+           throw new \Exception("Invalid topicId format: {$topicId}");
         }
         $courseid = $topicparts[1];
         $this->course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
@@ -137,5 +137,28 @@ class course_target extends modattendance_target
                 lib::log_info('Section number updated.');
             }
         }
+    }
+    /**
+     * Implements get_topics for course_target.
+     */
+    static public function get_topics($user):array {
+        // Collect all courses in which the user is teacher: Has any of:
+        // 'mod/attendance:addinstance'
+        $topics = [];
+
+        $courses = get_user_capability_course('mod/attendance:addinstance', $user->id);
+        foreach($courses as $course) {
+            global $DB;
+            // Get course data.
+            $course = $DB->get_record('course', array('id' => $course->id), '*', MUST_EXIST);
+            $topics[] = [
+                'topicId' => 'course-' . $course->id,
+                'name' => $course->shortname,
+                'info' => $course->fullname,
+                'externalIntegration' => true,
+                'tag' => 'course',
+            ];
+        }
+        return $topics;
     }
 }
