@@ -37,7 +37,7 @@ try {
     $apiuser = required_param('apiuser', PARAM_ALPHANUMEXT);
     $userid = required_param('userid', PARAM_ALPHANUMEXT);
 } catch (moodle_exception $e) {
-    header('HTTP/1.0 401 Bad Request');
+    header('HTTP/1.0 400 Bad Request');
     die();
 }
 
