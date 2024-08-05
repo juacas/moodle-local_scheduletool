@@ -32,6 +32,7 @@ $services = array(
             'local_attendancewebhook_add_session'
         ),
         'restrictedusers' => 0,
-        'enabled' => 0
+        'enabled' => 0,
+        'shortname' => 'attendancewebhook'
     )
 );

@@ -66,7 +66,7 @@ class local_attendancewebhook_external extends external_api {
                 }
                 return true;
             }
-
+            return false;
             
             if ($course == null) {
                 $course = \local_attendancewebhook\lib::get_course($config, $event);

@@ -50,7 +50,7 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != ge
     die();
 }
 // Find userid.
-$useridfield = get_config('local_attendancewebhook', 'restservices_field_userid');
+$useridfield = get_config('local_attendancewebhook', 'user_id');
 $user = $DB->get_record('user', [$useridfield => $userid], '*');
 
 if (!$user) {

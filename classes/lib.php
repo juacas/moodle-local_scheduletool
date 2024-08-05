@@ -20,7 +20,6 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/course/lib.php');
 require_once($CFG->dirroot.'/user/lib.php');
-require_once("$CFG->dirroot/mod/listgrades/locallib.php");
 
 class lib {
 
