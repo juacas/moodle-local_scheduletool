@@ -29,7 +29,7 @@ class attendance {
     private $server_time;
 
     public function __construct($object) {
-        if (!is_object($object)) {
+        if (!is_object($object) && ! $object instanceof \stdClass) {
             throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
         }
         $this->set_member($object->member);

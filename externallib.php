@@ -17,29 +17,38 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-require_once($CFG->dirroot.'/lib/externallib.php');
+require_once ($CFG->dirroot . '/lib/externallib.php');
 
-class local_attendancewebhook_external extends external_api {
+class local_attendancewebhook_external extends external_api
+{
 
-    public static function add_session_parameters() {
+    public static function add_session_parameters()
+    {
         return new external_function_parameters(array());
     }
 
-    public static function add_session() {
+    public static function add_session()
+    {
         try {
-
             $context = context_system::instance();
             self::validate_context($context);
-            require_capability('moodle/course:manageactivities', $context);
-            require_capability('mod/attendance:addinstance', $context);
-            require_capability('mod/attendance:changepreferences', $context);
-            require_capability('mod/attendance:manageattendances', $context);
-            require_capability('mod/attendance:takeattendances', $context);
-            require_capability('mod/attendance:changeattendances', $context);
-            require_capability('mod/attendance:managetemporaryusers', $context); // TODO: Check conditionally.
-            require_capability('moodle/user:create', $context);
-            require_capability('moodle/user:update', $context);
+            if (get_config('local_attendancewebhook', 'mod_attendance_enabled')) {
 
+                if (get_config('local_attendancewebhook', 'export_courses_as_topics')) {
+                    require_capability('moodle/course:manageactivities', $context);
+                    require_capability('mod/attendance:addinstance', $context);
+                    require_capability('mod/attendance:changepreferences', $context);
+                }
+                require_capability('mod/attendance:manageattendances', $context);
+                require_capability('mod/attendance:takeattendances', $context);
+                require_capability('mod/attendance:changeattendances', $context);
+
+                if (get_config('local_attendancewebhook', 'tempusers_enabled')) {
+                    require_capability('mod/attendance:managetemporaryusers', $context); // TODO: Check conditionally.
+                    require_capability('moodle/user:create', $context);
+                    require_capability('moodle/user:update', $context);
+                }
+            }
             $event = \local_attendancewebhook\lib::get_event();
             if (!$event) {
                 return false;
@@ -49,9 +58,7 @@ class local_attendancewebhook_external extends external_api {
             if (!$config) {
                 return false;
             }
-            $course = null;
-            $cm = null;
-            $session = null;
+
             $errors = [];
 
             // If Rest services are enabled, check topicId format.
@@ -66,70 +73,6 @@ class local_attendancewebhook_external extends external_api {
                 }
                 return true;
             }
-            return false;
-            
-            if ($course == null) {
-                $course = \local_attendancewebhook\lib::get_course($config, $event);
-                if (!$course) {
-                    \local_attendancewebhook\lib::notify_error($config, $event);
-                    return false;
-                }
-            }
-            if ($cm == null) {
-                $module = \local_attendancewebhook\lib::get_module();
-                if (!$module) {
-                    \local_attendancewebhook\lib::notify_error($config, $event);
-                    return false;
-                }
-                // Find or create ad-hoc attendance instance.
-                $cm = \local_attendancewebhook\lib::get_course_module($config, $course, $module);
-                if (!$cm) {
-                    \local_attendancewebhook\lib::notify_error($config, $event);
-                    return false;
-                }
-            }
-            if ($session == null) {      
-                // Create a new session with the given event. Errors if exists.
-                $session = \local_attendancewebhook\lib::get_session($cm, $event);
-                if (!$session) {
-                    \local_attendancewebhook\lib::notify_error($config, $event);
-                    return false;
-                }
-            }
-            
-
-            
-            $tempuser = null;
-            foreach ($event->get_attendances() as &$attendance) {
-                $user = \local_attendancewebhook\lib::get_user_enrol($config, $attendance, $course);
-                if (!$user) {
-                    if (!\local_attendancewebhook\lib::is_tempusers_enabled($config)) {
-                        continue;
-                    } else {
-                        $tempuser = \local_attendancewebhook\lib::get_tempuser($attendance, $course);
-                        if (!$tempuser) {
-                            $errors[] = $attendance;
-                            continue;
-                        }
-                    }
-                }
-                // Get the list of possible statuses.
-                $status = \local_attendancewebhook\lib::get_status($cm, $attendance);
-                if (!$status) {
-                    $errors[] = $attendance;
-                    continue;
-                }
-
-                $log = \local_attendancewebhook\lib::get_log($session, $user, $tempuser, $status, $attendance);
-                if (!$log) {
-                    $errors[] = $attendance;
-                }
-            }
-
-            if (count($errors) > 0) {
-                \local_attendancewebhook\lib::notify_error($config, $event, $errors);
-            }
-            return true;
 
         } catch (Exception $e) {
 
@@ -137,12 +80,76 @@ class local_attendancewebhook_external extends external_api {
             if ($event && $config) {
                 \local_attendancewebhook\lib::notify_error($config, $event, $errors);
             }
-            return false;
         }
+        return false;
     }
-
-    public static function add_session_returns() {
+    public static function add_session_returns()
+    {
         return new external_value(PARAM_BOOL);
     }
+    public static function save_attendance_parameters()
+    {
+        return new external_function_parameters([]);
+    }
 
+    public static function save_attendance()
+    {
+        try {
+            $context = context_system::instance();
+            self::validate_context($context);
+            if (get_config('local_attendancewebhook', 'mod_attendance_enabled')) {
+
+                if (get_config('local_attendancewebhook', 'export_courses_as_topics')) {
+                    require_capability('moodle/course:manageactivities', $context);
+                    require_capability('mod/attendance:addinstance', $context);
+                    require_capability('mod/attendance:changepreferences', $context);
+                }
+                require_capability('mod/attendance:manageattendances', $context);
+                require_capability('mod/attendance:takeattendances', $context);
+                require_capability('mod/attendance:changeattendances', $context);
+
+                if (get_config('local_attendancewebhook', 'tempusers_enabled')) {
+                    require_capability('mod/attendance:managetemporaryusers', $context); // TODO: Check conditionally.
+                    require_capability('moodle/user:create', $context);
+                    require_capability('moodle/user:update', $context);
+                }
+            }
+            $event = \local_attendancewebhook\lib::get_attendance_event();
+            if (!$event) {
+                return false;
+            }
+
+            $config = \local_attendancewebhook\lib::get_config();
+            if (!$config) {
+                return false;
+            }
+
+            $errors = [];
+
+            // If Rest services are enabled, check topicId format.
+            if ($config->restservices_enabled) {
+                global $DB;
+                $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
+                $att_target->errors = &$errors;
+                $att_target->register_attendances();
+
+                if (count($errors) > 0) {
+                    \local_attendancewebhook\lib::notify_error($config, $event, $errors);
+                }
+                return true;
+            }
+
+        } catch (Exception $e) {
+
+            \local_attendancewebhook\lib::log_error($e);
+            if ($event && $config) {
+                \local_attendancewebhook\lib::notify_error($config, $event, $errors);
+            }
+        }
+        return false;
+    }
+    public static function save_attendance_returns()
+    {
+        return new external_value(PARAM_BOOL);
+    }
 }

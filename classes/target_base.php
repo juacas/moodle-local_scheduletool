@@ -35,7 +35,7 @@ abstract class target_base
     public $config;
     public $logtaker_user;
 
-    public function __construct(event $event, $config)
+    public function __construct(object $event, $config)
     {
         $this->config = $config;
         $this->event = $event;
@@ -98,18 +98,28 @@ abstract class target_base
      * @param \local_attendancewebhook\event $event
      * @return bool|object
      */
-    static public function get_target(event $event, $config): target_base
+    static public function get_target(object $event, $config): target_base
     {
         $topicId = $event->get_topic()->get_topic_id();
         $topicidparts = explode('-', $topicId);
         $type = $topicidparts[0];
+
+        // Check if the integration is enabled.
+        if ($config->modhybridteaching_enabled == false && $type == 'hybridteaching') {
+            throw new \Exception('mod_hybridteaching integration is disabled.');
+        }
+        if ($config->modattendance_enabled == false && ($type == 'attendance' || $type == 'course')) {
+            throw new \Exception('mod_attendance integration is disabled.');
+        }
+        if ($config->export_courses_as_topics == false && $type == 'course') {
+            throw new \Exception('Courses as topics is disabled.');
+        }
         // Instantiate the target object depending on type.
         if ($type == 'course') {
             $classname = __NAMESPACE__ . '\\course_target';
         } else {
             $classname = __NAMESPACE__ . '\\mod' . $type . '_target';
         }
-
         return new $classname($event, $config);
     }
     /**
@@ -128,7 +138,7 @@ abstract class target_base
     {
         // First check configuration of the target.
         $this->check_configuration();
-        $attendances = $this->event->get_attendances();
+        $attendances = $this->event->get_attendances();        
         foreach ($attendances as $attendance) {
             $this->register_attendance($attendance);
         }

@@ -16,23 +16,31 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$functions = array(
-    'local_attendancewebhook_add_session' => array(
+$functions = [
+    'local_attendancewebhook_add_session' => [
         'classname' => 'local_attendancewebhook_external',
         'methodname' => 'add_session',
         'classpath' => 'local/attendancewebhook/externallib.php',
-        'description' => 'Add an attendance session.',
+        'description' => 'Add a full attendance session with a list of attendees.',
         'type' => 'write'
-    )
-);
+    ],
+    'local_attendancewebhook_save_attendance' => [
+        'classname' => 'local_attendancewebhook_external',
+        'methodname' => 'save_attendance',
+        'classpath' => 'local/attendancewebhook/externallib.php',
+        'description' => 'Save attendance data.',
+        'type' => 'write'
+    ]
+];
 
-$services = array(
-    'Attendance Webhook' => array(
-        'functions' => array(
-            'local_attendancewebhook_add_session'
-        ),
+$services = [
+    'Attendance Webhook' => [
+        'functions' => [
+            'local_attendancewebhook_add_session',
+            'local_attendancewebhook_save_attendance',
+        ],
         'restrictedusers' => 0,
         'enabled' => 0,
         'shortname' => 'attendancewebhook'
-    )
-);
+    ]
+];

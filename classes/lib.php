@@ -51,6 +51,20 @@ class lib {
             return $event;
         }
     }
+    public static function get_attendance_event() {
+        $json = file_get_contents("php://input");
+        self::log_info('Request received: '.$json);
+        $object = json_decode($json);
+        $event = new attendance_event($object);
+        $message = 'Activity of type '.$event->get_topic()->get_type().'.';
+        if ($event->get_topic()->get_type() !== 'COMMON') { // TODO: type COMMON???
+            self::log_error($message);
+            return false;
+        } else {
+            self::log_info($message);
+            return $event;
+        }
+    }
 
     public static function get_config() {
         $config = get_config('local_attendancewebhook');
@@ -161,53 +175,10 @@ class lib {
         }
     }
 
-    public static function get_session($cm, $event) {
-        global $DB;
-        $params = array('attendanceid' => $cm->instance, 'sessdate' => $event->get_opening_time());
-        $sessions = $DB->get_records('attendance_sessions', $params);
-        $message = count($sessions).' attendance session(s) '.json_encode($params).' found.';
-        if (count($sessions) > 1) {
-            self::log_error($message);
-            return false;
-        } else {
-            self::log_info($message);
-            if (count($sessions) == 1) {
-                $session = $sessions[array_keys($sessions)[0]];
-                $session->lasttaken = $event->get_closing_time();
-                $session->timemodified = time();
-                $DB->update_record('attendance_sessions', $session);
-                self::log_info('Attendance session updated.');
-                return $session;
-            } else {
-                $session = new \stdClass();
-                $session->attendanceid = $cm->instance;
-                $session->sessdate = $event->get_opening_time();
-                $session->lasttaken = $event->get_closing_time();
-                $session->description = $event->get_event_note();
-                $session->timemodified = time();
-                $session->id = $DB->insert_record('attendance_sessions', $session);
-                self::log_info('Attendance session created.');
-                return $session;
-            }
-        }
-    }
-    // public static function find_user_by_userid($config, $userid) {
-    //     global $DB;
-    //     $params = array($config->user_id => $userid);
-    //     $users = $DB->get_records('user', $params);
-    //     $message = count($users).' users(s) '.json_encode($params).' found.';
-    //     if (count($users) != 1) {
-    //         self::log_error($message);
-    //         return false;
-    //     } else {
-    //         self::log_info($message);
-    //         return reset($users);
-    //     }
-    // }
-    public static function get_user_enrol($config, $attendance, $course) {
+    public static function get_user_enrol($config, $member, $course) {
         global $DB;
         // TODO: Upe Moodle API.
-        $user = lib::get_user($config, $attendance->get_member());
+        $user = lib::get_user($config, $member);
         $context = \context_course::instance($course->id);
         // Check if user is enrolled in course by userid (is cached).
         if (!$user || !is_enrolled($context, $user->id)) {
@@ -215,19 +186,6 @@ class lib {
         } else {
             return $user;
         }
-        // $sql = "SELECT u.* FROM {user} u" .
-        //     " JOIN {user_enrolments} ue ON ue.userid = u.id" .
-        //     " JOIN {enrol} e ON (e.id = ue.enrolid AND e.courseid = :courseid)" .
-        //     " WHERE u." . $config->user_id . " = :" . $config->user_id;
-        // $params = array($config->user_id => self::get_member_id($config, $attendance->get_member()), 'courseid' => $course->id);
-        // $users = $DB->get_records_sql($sql, $params);
-        // $message = count($users).' course user(s) '.json_encode($params).' found.';
-        // self::log_info($message);
-        // if (count($users) != 1) {
-        //     return false;
-        // } else {
-        //     return $users[array_keys($users)[0]];
-        // }
     }
     /**
      * Returns the value of the field configured to be used as member id.
@@ -295,48 +253,6 @@ class lib {
         }
     }
 
-    public static function get_status($cm, $attendance) {
-        global $DB;
-        $params = array('attendanceid' => $cm->instance, 'description' => self::STATUS_DESCRIPTIONS[$attendance->get_mode()]);
-        $statuses = $DB->get_records('attendance_statuses', $params);
-        $message = count($statuses).' attendance statuses '.json_encode($params).' found.';
-        if (count($statuses) != 1) {
-            self::log_error($message);
-            return false;
-        } else {
-            self::log_info($message);
-            return $statuses[array_keys($statuses)[0]];
-        }
-    }
-
-    public static function get_log($session, $user, $tempuser, $status, $attendance) {
-        global $DB;
-        $params = array('sessionid' => $session->id, 'studentid' => $user ? $user->id : $tempuser->studentid);
-        $logs = $DB->get_records('attendance_log', $params);
-        $message = count($logs).' attendance log(s) '.json_encode($params).' found.';
-        if (count($logs) > 1) { // TODO: Why a log can't be overwritten?
-            self::log_error($message);
-            return false;
-        } else {
-            self::log_info($message);
-            if (count($logs) == 1) {
-                return $logs[array_keys($logs)[0]];
-            } else {
-                $log = new \stdClass();
-                $log->sessionid = $session->id;
-                $log->studentid = $user ? $user->id : $tempuser->studentid;
-                $log->statusid = $status->id;
-                $log->timetaken = $attendance->get_server_time();
-                $log->remarks = $attendance->get_attendance_note();
-                $log->id = $DB->insert_record('attendance_log', $log);
-                // TODO use  save_log($sesslog) instead of insert_record
-               // \mod_attendance_structure::save_log($sesslog) // TODO
-                self::log_info('Attendance log created.');
-                return $log;
-            }
-        }
-    }
-
     public static function log_info($message) {
         self::log($message, 'INFO');
     }
@@ -344,7 +260,7 @@ class lib {
     public static function log_error($message) {
         self::log($message, 'ERROR');
     }
-
+// TODO: Use moodle logger.
     private static function log($message, $type) {
         global $CFG;
         $dir = $CFG->dataroot.DIRECTORY_SEPARATOR.self::CM_IDNUMBER.DIRECTORY_SEPARATOR.'logs';
@@ -421,7 +337,7 @@ class lib {
             return false;
         } else {
             self::log_info($message);
-            return $users[array_keys($users)[0]];
+            return reset($users);
         }
     }
 

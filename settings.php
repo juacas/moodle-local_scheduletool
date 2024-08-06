@@ -22,35 +22,141 @@ if ($hassiteconfig) {
 
     $ADMIN->add('localplugins', $settings);
 
+    // If mod_attendance is installed, show the following settings.
+    $pluginmgr = \core_plugin_manager::instance();
+    $attplugin_available = $pluginmgr->get_plugin_info('mod_attendance')->is_enabled() ?? false;
+    $hybplugin_available = $pluginmgr->get_plugin_info('mod_hybridteaching')->is_enabled() ?? false;
+    // mod_attendance section heading.
     $settings->add(
-        new admin_setting_configtext(
-            'local_attendancewebhook/module_name',
-            new lang_string('module_name_name', 'local_attendancewebhook'),
-            new lang_string('module_name_description', 'local_attendancewebhook'),
-            new lang_string('pluginname', 'local_attendancewebhook'),
-            PARAM_TEXT,
-            64
+        new admin_setting_heading(
+            'local_attendancewebhook/modattendance_heading',
+            new lang_string('modattendance_heading', 'local_attendancewebhook'),
+            new lang_string('modattendance_description', 'local_attendancewebhook')
         )
     );
+    // Settings for mod_attendance integration.
+    if ($attplugin_available) {
+        $settings->add(
+            new admin_setting_configcheckbox(
+                'local_attendancewebhook/modattendance_enabled',
+                new lang_string('modattendance_enabled_name', 'local_attendancewebhook'),
+                new lang_string('modattendance_enabled_description', 'local_attendancewebhook'),
+                $attplugin_available
+            )
+        );
 
-    $settings->add(
-        new admin_setting_configtext(
-            'local_attendancewebhook/module_section',
-            new lang_string('module_section_name', 'local_attendancewebhook'),
-            new lang_string('module_section_description', 'local_attendancewebhook'),
-            0,
-            PARAM_INT,
-            64
-        )
-    );
+        // Checkbox for exporting mod_attendance sessions as topics.
+        $settings->add(
+            new admin_setting_configcheckbox(
+                'local_attendancewebhook/export_sessions_as_topics',
+                new lang_string('export_sessions_as_topics_name', 'local_attendancewebhook'),
+                new lang_string('export_sessions_as_topics_description', 'local_attendancewebhook'),
+                1
+            )
+        );
+        $settings->hide_if('local_attendancewebhook/export_sessions_as_topics', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
+        // Checkbox for exporting courses as topics.
+        $settings->add(
+            new admin_setting_configcheckbox(
+                'local_attendancewebhook/export_courses_as_topics',
+                new lang_string('export_courses_as_topics_name', 'local_attendancewebhook'),
+                new lang_string('export_courses_as_topics_description', 'local_attendancewebhook'),
+                1
+            )
+        );
+        $settings->hide_if('local_attendancewebhook/export_courses_as_topics', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
+        // Setting for creating a new instance for course topics.
+        $settings->add(
+            new admin_setting_configtext(
+                'local_attendancewebhook/module_name',
+                new lang_string('module_name_name', 'local_attendancewebhook'),
+                new lang_string('module_name_description', 'local_attendancewebhook'),
+                new lang_string('pluginname', 'local_attendancewebhook'),
+                PARAM_TEXT,
+                64
+            )
+        );
+        $settings->hide_if('local_attendancewebhook/module_name', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
+        $settings->hide_if('local_attendancewebhook/module_name', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
 
+        $settings->add(
+            new admin_setting_configtext(
+                'local_attendancewebhook/module_section',
+                new lang_string('module_section_name', 'local_attendancewebhook'),
+                new lang_string('module_section_description', 'local_attendancewebhook'),
+                0,
+                PARAM_INT,
+                64
+            )
+        );
+        $settings->hide_if('local_attendancewebhook/module_section', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
+        $settings->hide_if('local_attendancewebhook/module_section', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
+
+        $settings->add(
+            new admin_setting_configselect(
+                'local_attendancewebhook/course_id',
+                new lang_string('course_id_name', 'local_attendancewebhook'),
+                new lang_string('course_id_description', 'local_attendancewebhook'),
+                'shortname',
+                array('shortname' => 'shortname', 'idnumber' => 'idnumber')
+            )
+        );
+        $settings->hide_if('local_attendancewebhook/course_id', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
+        $settings->hide_if('local_attendancewebhook/course_id', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
+        // Temporary users.
+        $settings->add(
+            new admin_setting_configcheckbox(
+                'local_attendancewebhook/tempusers_enabled',
+                new lang_string('tempusers_enabled_name', 'local_attendancewebhook'),
+                new lang_string('tempusers_enabled_description', 'local_attendancewebhook'),
+                0
+            )
+        );
+
+    } else {
+        $settings->add(
+            new admin_setting_description(
+                'local_attendancewebhook/modattendance_is_not_available',
+                new lang_string('modattendance_notavailable', 'local_attendancewebhook'),
+                new lang_string('modattendance_notavilable_description', 'local_attendancewebhook')
+            )
+        );
+    }
+    // Settings for mod_attendance integration.
+    if ($attplugin_available) {
+        // Hybridteaching section heading.
+        $settings->add(
+            new admin_setting_heading(
+                'local_attendancewebhook/modhybridteaching_heading',
+                new lang_string('modhybridteaching_heading', 'local_attendancewebhook'),
+                new lang_string('modhybridteaching_description', 'local_attendancewebhook')
+            )
+        );
+        $settings->add(
+            new admin_setting_configcheckbox(
+                'local_attendancewebhook/modhybridteaching_enabled',
+                new lang_string('modhybridteaching_enabled_name', 'local_attendancewebhook'),
+                new lang_string('modhybridteaching_enabled_description', 'local_attendancewebhook'),
+                $attplugin_available
+            )
+        );
+        
+    } else {
+        // Settings description with the message that the plugin mod_hybridteaching is not available.
+        $settings->add(
+            new admin_setting_description(
+                'local_attendancewebhook/modhybridteaching_is_not_available',
+                new lang_string('modhybridteaching_notavailable', 'local_attendancewebhook'),
+                new lang_string('modhybridteaching_notavilable_description', 'local_attendancewebhook')
+            )
+        );
+    }
+    // Heading for field mapping.
     $settings->add(
-        new admin_setting_configselect(
-            'local_attendancewebhook/course_id',
-            new lang_string('course_id_name', 'local_attendancewebhook'),
-            new lang_string('course_id_description', 'local_attendancewebhook'),
-            'shortname',
-            array('shortname' => 'shortname', 'idnumber' => 'idnumber')
+        new admin_setting_heading(
+            'local_attendancewebhook/field_mapping_heading',
+            new lang_string('field_mapping_heading', 'local_attendancewebhook'),
+            new lang_string('field_mapping_description', 'local_attendancewebhook')
         )
     );
     // Field for matching userid.
@@ -73,13 +179,26 @@ if ($hassiteconfig) {
             array('username' => 'username', 'email' => 'email')
         )
     );
-
+    $fields = get_user_fieldnames();
+    require_once ($CFG->dirroot . '/user/profile/lib.php');
+    $customfields = profile_get_custom_fields();
+    $userfields = [];
+    // Make the keys string values and not indexes.
+    foreach ($fields as $field) {
+        $userfields[$field] = $field;
+        $basicfields[$field] = $field;
+    }
+    foreach ($customfields as $field) {
+        $userfields[$field->shortname] = $field->name;
+    }
+    // Field for NIA.
     $settings->add(
-        new admin_setting_configcheckbox(
-            'local_attendancewebhook/tempusers_enabled',
-            new lang_string('tempusers_enabled_name', 'local_attendancewebhook'),
-            new lang_string('tempusers_enabled_description', 'local_attendancewebhook'),
-            0
+        new admin_setting_configselect(
+            'local_attendancewebhook/field_NIA',
+            get_string('restservices_fieldNIA', 'local_attendancewebhook'),
+            get_string('restservices_fieldNIA_description', 'local_attendancewebhook'),
+            'idnumber',
+            $userfields
         )
     );
 
@@ -91,8 +210,14 @@ if ($hassiteconfig) {
             0
         )
     );
-
     // Integration REST services.
+    $settings->add(
+        new admin_setting_heading(
+            'local_attendancewebhook/restservices_heading',
+            new lang_string('restservices_heading', 'local_attendancewebhook'),
+            new lang_string('restservices_description', 'local_attendancewebhook')
+        )
+    );
     // Enable REST services.
     $settings->add(
         new admin_setting_configcheckbox(
@@ -104,7 +229,6 @@ if ($hassiteconfig) {
     );
     // Generate random API Key.
     $defaultapikey = bin2hex(random_bytes(32));
-
     // If REST services is enabled, show the following settings.
     // Apikey.
     $settings->add(
@@ -117,6 +241,7 @@ if ($hassiteconfig) {
             64
         )
     );
+    $settings->hide_if('local_attendancewebhook/apikey', 'local_attendancewebhook/restservices_enabled', 'notchecked');
     // API user.
     $settings->add(
         new admin_setting_configtext(
@@ -128,25 +253,7 @@ if ($hassiteconfig) {
             64
         )
     );
-    $fields = get_user_fieldnames();
-    require_once($CFG->dirroot . '/user/profile/lib.php');
-    $customfields = profile_get_custom_fields();
-    $userfields = [];
-    // Make the keys string values and not indexes.
-    foreach ($fields as $field) {
-        $userfields[$field] = $field;
-        $basicfields[$field] = $field;
-    }
-    foreach ($customfields as $field) {
-        $userfields[$field->shortname] = $field->name;
-    }
-    // Field for NIA.
-    $settings->add(new admin_setting_configselect(
-        'local_attendancewebhook/field_NIA',
-        get_string('restservices_fieldNIA', 'local_attendancewebhook'),
-        get_string('restservices_fieldNIA_description', 'local_attendancewebhook'),
-        'idnumber',
-        $userfields
-    ));
+    $settings->hide_if('local_attendancewebhook/apiuser', 'local_attendancewebhook/restservices_enabled', 'notchecked');
+
 
 }

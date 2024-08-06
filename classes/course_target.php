@@ -24,7 +24,7 @@ defined('MOODLE_INTERNAL') || die();
 class course_target extends modattendance_target
 {
     public \mod_attendance_structure $att_struct;
-    public function __construct(event $event, $config)
+    public function __construct(object $event, $config)
     {
         global $DB;
         parent::__construct($event, $config);
@@ -66,7 +66,6 @@ class course_target extends modattendance_target
                 $session = new \stdClass();
                 $session->sessdate = $this->event->get_opening_time();
                 $session->duration = $this->event->get_closing_time() - $this->event->get_opening_time();
-                //$session->lasttaken = $this->event->get_closing_time(); // This is for update.
                 $session->description = $this->event->get_event_note();
                 $session->groupid = 0;
 
@@ -80,6 +79,7 @@ class course_target extends modattendance_target
     }
     /**
      * Check configuration and fix statuses, names and section position.
+     * Creates a new attendance activity if not found.
      */
     public function check_configuration()
     {
@@ -147,6 +147,9 @@ class course_target extends modattendance_target
         $topics = [];
 
         $courses = get_user_capability_course('mod/attendance:addinstance', $user->id);
+        if (empty($courses)) {
+            return $topics;
+        }
         foreach($courses as $course) {
             global $DB;
             // Get course data.

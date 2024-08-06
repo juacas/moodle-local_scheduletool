@@ -25,7 +25,7 @@ require_once ($CFG->dirroot . '/mod/attendance/locallib.php');
 class modattendance_target extends target_base
 {
     public \mod_attendance_structure $att_struct;
-    public function __construct(event $event, $config)
+    public function __construct(object $event, $config)
     {
         parent::__construct($event, $config);
         $this->load_modattendance();
@@ -76,10 +76,11 @@ class modattendance_target extends target_base
     public function register_attendance(attendance $attendance)
     {
         global $USER;
-        $user = \local_attendancewebhook\lib::get_user_enrol($this->config, $attendance, $this->course);
+        $member = $attendance->get_member();
+        $user = \local_attendancewebhook\lib::get_user_enrol($this->config, $member, $this->course);
         if (!$user) {
             if (!\local_attendancewebhook\lib::is_tempusers_enabled($this->config)) {
-                $msg = 'User unknown not marked: ' . $attendance->get_member();
+                $msg = 'User unknown not marked: ' . $member;
                 lib::log_error($msg);
                 $this->errors[] = $msg;
                 return;
@@ -92,7 +93,7 @@ class modattendance_target extends target_base
             }
         }
         // Get the status from the list of possible statuses.
-        $status = \local_attendancewebhook\lib::get_status($this->cm, $attendance);
+        $status = $this->get_status($attendance);
         if (!$status) {
             $this->errors[] = $attendance;
             return;
@@ -125,6 +126,9 @@ class modattendance_target extends target_base
         $topics = [];
         // Get all attendance sessions.
         $courses = get_user_capability_course('mod/attendance:addinstance', $user->id);
+        if (empty($courses)) {
+            return $topics;
+        }
         $coursesid = array_map(function ($course) {
             return $course->id;
         }, $courses);
@@ -134,7 +138,9 @@ class modattendance_target extends target_base
             $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
             $context = \context_module::instance($cm->id);
             $att = new \mod_attendance_structure($attendance, $cm, $course, $context);
-            $sessions = $att->get_current_sessions();
+            // TODO: Get sessions by proximity in time.
+            $sessions = $att->get_today_sessions();
+            //$sessions = $att->get_current_sessions();
             // Each session is a topic.
             foreach ($sessions as $session) {
                 // Create info text from dates.
@@ -151,4 +157,24 @@ class modattendance_target extends target_base
         }
         return $topics;
     }
+    /**
+     * Get the right status to be used.
+     * 
+     * @param mixed $attendance
+     * @return mixed
+     */
+    public function get_status( $attendance) {
+        global $DB;
+        $params = array('attendanceid' => $this->cm->instance, 'description' => lib::STATUS_DESCRIPTIONS[$attendance->get_mode()]);
+        $statuses = $DB->get_records('attendance_statuses', $params);
+        $message = count($statuses).' attendance statuses '.json_encode($params).' found.';
+        if (count($statuses) != 1) {
+            lib::log_error($message);
+            return false;
+        } else {
+            lib::log_info($message);
+            return reset($statuses);
+        }
+    }
+
 }

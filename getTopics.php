@@ -78,7 +78,7 @@ try {
     $apikey = required_param('apikey', PARAM_ALPHANUMEXT);
     $apiuser = required_param('apiuser', PARAM_ALPHANUMEXT);
     $userid = required_param('userid', PARAM_ALPHANUMEXT);
-} catch (moodle_exception $e) {
+} catch (\moodle_exception $e) {
     header('HTTP/1.0 401 Bad Request');
     die();
 }
@@ -104,14 +104,20 @@ try {
     
     // Courses can't be topics without POD.
     // TODO: Get Timetables from POD.
-    if (true) {
-      $topics[] = course_target::get_topics($user);
+    if (get_config('local_attendancewebhook', 'export_courses_as_topics')) {
+        $courses = course_target::get_topics($user);
+        $topics  = array_merge($topics, $courses);
     }
-    
-    $topics[] = modattendance_target::get_topics($user);
-    //$topics[] = hybridteaching_target::get_topics($user);
-    
-    $response = json_encode($topics, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
+    if (get_config('local_attendancewebhook', 'modattendance_enabled')) {
+        $mods = modattendance_target::get_topics($user);
+        $topics = array_merge($topics, $mods);
+    }
+    if (get_config('local_attendancewebhook', 'modhybridteaching_enabled')) {
+        $mods = modhybridteaching_target::get_topics($user);
+        $topics = array_merge($topics, $mods);
+    }
+    $response = [ "topics" => $topics ];
+    $response = json_encode($response, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
     
     echo $response;
 } catch (Exception $e) {
