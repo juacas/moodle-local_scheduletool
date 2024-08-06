@@ -24,8 +24,10 @@ if ($hassiteconfig) {
 
     // If mod_attendance is installed, show the following settings.
     $pluginmgr = \core_plugin_manager::instance();
-    $attplugin_available = $pluginmgr->get_plugin_info('mod_attendance')->is_enabled() ?? false;
-    $hybplugin_available = $pluginmgr->get_plugin_info('mod_hybridteaching')->is_enabled() ?? false;
+    $attplugin = $pluginmgr->get_plugin_info('mod_attendance');
+    $attplugin_available = $attplugin && $attplugin->is_enabled() ?? false;
+    $hybplugin = $pluginmgr->get_plugin_info('mod_hybridteaching');
+    $hybplugin_available = $hybplugin && $hybplugin->is_enabled() ?? false;
     // mod_attendance section heading.
     $settings->add(
         new admin_setting_heading(
