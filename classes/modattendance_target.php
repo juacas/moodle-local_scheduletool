@@ -147,12 +147,25 @@ class modattendance_target extends target_base
                 // Create info text from dates.
                 $description = content_to_text($session->description, FORMAT_MOODLE);
                 $info = "{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')';
+                $days = ["L", "M", "X", "J", "V", "S", "D"];
                 $topics[] = [
                     'topicId' => 'attendance-' . $cm->id . '-' . $session->id,
                     'name' => $course->shortname . ":" . $att->name . " " . $description,
                     'info' => $info,
                     'externalIntegration' => true,
                     'tag' => "{$course->shortname}/{$att->name}/{$description}/{$info}",
+                    'calendar' => [// format: 2021-09-01
+                        'startDate' => date('Y-m-d', $session->sessdate),
+                        'endDate' => date('Y-m-d', $session->sessdate + $session->duration),
+                        'timetables' => [
+                            [
+                             'weekday' => $days[date('N', $session->sessdate)], 
+                             'startTime' => date('H:i', $session->sessdate), 
+                             'endTime' => date('H:i', $session->sessdate + $session->duration),
+                             "info" => $info,
+                            ]
+                        ]
+                    ],
                 ];
             }
         }
