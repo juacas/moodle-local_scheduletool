@@ -48,16 +48,21 @@ $string['restservices_apiuser_description'] = 'API user para autenticación en R
 $string['restservices_fieldNIA'] = 'campo para el NIA';
 $string['restservices_fieldNIA_description'] = 'Campo de usuario donde se almacena el NIA';
 $string['modattendance_heading'] = 'Integración con mod_attendance';
-$string['modattendance_description'] = 'El plugin mod_attendance se usa para gestionar la asistencia en Moodle. Este plugin se usa para integrar con Asistencia de Datio';
+$string['modattendance_description'] = 'El plugin mod_attendance se usa para gestionar la asistencia en Moodle. Este plugin se puede integrar con Asistencia de Datio';
 $string['modattendance_enabled_name'] = 'Habilitar integración con mod_attendance';
 $string['modattendance_enabled_description'] = 'Habilitar o deshabilitar la integración con mod_attendance';
+$string['modattendance_notavailable'] = 'El plugin mod_attendance no está disponible';
+$string['modattendance_notavailable_description'] = 'El plugin mod_attendance se puede usar para gestionar la asistencia en Moodle. Puede encontrarlo en <a href="https://moodle.org/plugins/mod_attendance">https://moodle.org/plugins/mod_attendance</a>';
+
 $string['export_sessions_as_topics_name'] = 'Exportar sesiones como temas';
 $string['export_sessions_as_topics_description'] = 'Las próximas sesiones de asistencia en cualquier instancia de mod_attendance se exportará como un tema';
 $string['export_courses_as_topics_name'] = 'Exportar cursos como temas';
 $string['export_courses_as_topics_description'] = 'Cada curso se exportará como un tema de almacenamiento. Se creará una nueva actividad de asistencia para cada curso para almacenar las sesiones de asistencia';
 $string['modhybridteaching_heading'] = 'Integración con mod_hybridteaching';
-$string['modhybridteaching_description'] = 'El plugin mod_hybridteaching se usa para gestionar la asistencia en Moodle. Este plugin se usa para integrar con Asistencia de Datio';
+$string['modhybridteaching_description'] = 'El plugin mod_hybridteaching se usa para gestionar la asistencia en Moodle. Más información en <a href="https://unimoodle.github.io/moodle-mod_hybridteaching/">https://unimoodle.github.io/moodle-mod_hybridteaching/</a>';
 $string['modhybridteaching_enabled_name'] = 'Habilitar integración con mod_hybridteaching';
 $string['modhybridteaching_enabled_description'] = 'Habilitar o deshabilitar la integración con mod_hybridteaching';
+$string['modhybridteaching_notavailable'] = 'El plugin mod_hybridteaching no está disponible';
+$string['modhybridteaching_notavailable_description'] = 'El plugin mod_hybridteaching se puede usar para gestionar la asistencia en Moodle. Puede encontrarlo en <a href="https://unimoodle.github.io/moodle-mod_hybridteaching/">https://unimoodle.github.io/moodle-mod_hybridteaching/</a>';	
 $string['field_mapping_heading'] = 'Mapeo de campos';
 $string['field_mapping_description'] = 'Mapeo de campos para los datos de usuario';

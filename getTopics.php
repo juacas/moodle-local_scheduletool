@@ -101,7 +101,6 @@ if (!$user) {
 }
 try {
     $topics = [];
-    
     // Courses can't be topics without POD.
     // TODO: Get Timetables from POD.
     if (get_config('local_attendancewebhook', 'export_courses_as_topics')) {

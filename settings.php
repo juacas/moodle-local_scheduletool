@@ -25,9 +25,10 @@ if ($hassiteconfig) {
     // If mod_attendance is installed, show the following settings.
     $pluginmgr = \core_plugin_manager::instance();
     $attplugin = $pluginmgr->get_plugin_info('mod_attendance');
-    $attplugin_available = $attplugin && $attplugin->is_enabled() ?? false;
+    $attplugin_available = $attplugin !== null && $attplugin->is_enabled();
     $hybplugin = $pluginmgr->get_plugin_info('mod_hybridteaching');
-    $hybplugin_available = $hybplugin && $hybplugin->is_enabled() ?? false;
+    $hybplugin_available = $hybplugin !== null && $hybplugin->is_enabled();
+
     // mod_attendance section heading.
     $settings->add(
         new admin_setting_heading(
@@ -120,20 +121,20 @@ if ($hassiteconfig) {
             new admin_setting_description(
                 'local_attendancewebhook/modattendance_is_not_available',
                 new lang_string('modattendance_notavailable', 'local_attendancewebhook'),
-                new lang_string('modattendance_notavilable_description', 'local_attendancewebhook')
+                new lang_string('modattendance_notavailable_description', 'local_attendancewebhook')
             )
         );
     }
-    // Settings for mod_attendance integration.
-    if ($attplugin_available) {
-        // Hybridteaching section heading.
-        $settings->add(
-            new admin_setting_heading(
-                'local_attendancewebhook/modhybridteaching_heading',
-                new lang_string('modhybridteaching_heading', 'local_attendancewebhook'),
-                new lang_string('modhybridteaching_description', 'local_attendancewebhook')
-            )
-        );
+    // Hybridteaching section heading.
+    $settings->add(
+        new admin_setting_heading(
+            'local_attendancewebhook/modhybridteaching_heading',
+            new lang_string('modhybridteaching_heading', 'local_attendancewebhook'),
+            new lang_string('modhybridteaching_description', 'local_attendancewebhook')
+        )
+    );
+    // Settings for mod_hybridteaching integration.
+    if ($hybplugin_available) {
         $settings->add(
             new admin_setting_configcheckbox(
                 'local_attendancewebhook/modhybridteaching_enabled',
@@ -149,7 +150,7 @@ if ($hassiteconfig) {
             new admin_setting_description(
                 'local_attendancewebhook/modhybridteaching_is_not_available',
                 new lang_string('modhybridteaching_notavailable', 'local_attendancewebhook'),
-                new lang_string('modhybridteaching_notavilable_description', 'local_attendancewebhook')
+                new lang_string('modhybridteaching_notavailable_description', 'local_attendancewebhook')
             )
         );
     }

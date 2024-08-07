@@ -49,16 +49,22 @@ $string['restservices_apiuser_description'] = 'API user for REST services client
 $string['restservices_fieldNIA'] = 'User field for NIA';
 $string['restservices_fieldNIA_description'] = 'User field where NIA is stored';
 $string['modattendance_heading'] = 'mod_attendance integration';
-$string['modattendance_description'] = 'mod_attendance plugin can be used to manage attendance in Moodle. This plugin is used to integrate with Datio\'s Asistencia';
+$string['modattendance_description'] = 'mod_attendance plugin can be used to manage attendance in Moodle. This plugin can be integrated with Datio\'s Asistencia';
 $string['modattendance_enabled_name'] = 'Enable mod_attendance integration';
 $string['modattendance_enabled_description'] = 'Enable or disable mod_attendance integration';
+$string['modattendance_notavailable'] = 'mod_attendance plugin not available';
+$string['modattendance_notavailable_description'] = 'mod_attendance plugin can be used to manage attendance in Moodle. You can find it at <a href="https://moodle.org/plugins/mod_attendance">https://moodle.org/plugins/mod_attendance</a>';
+
 $string['export_sessions_as_topics_name'] = 'Export sessions as topics';
 $string['export_sessions_as_topics_description'] = 'Each near session in any instance of mod_attendance will be exported as a topic';
 $string['export_courses_as_topics_name'] = 'Export courses as topics';
 $string['export_courses_as_topics_description'] = 'Each course will be exported as a topic storage. A new attendance activity will be created for each course to store attendance sessions';
 $string['modhybridteaching_heading'] = 'mod_hybridteaching integration';
-$string['modhybridteaching_description'] = 'mod_hybridteaching plugin can be used to manage attendance in Moodle. This plugin is used to integrate with Datio\'s Asistencia';
+$string['modhybridteaching_description'] = 'mod_hybridteaching plugin can be used to manage attendance in Moodle. More information at <a href="https://unimoodle.github.io/moodle-mod_hybridteaching/">https://unimoodle.github.io/moodle-mod_hybridteaching/</a> (Spanish). This plugin can be integrated with Datio\'s Asistencia';
 $string['modhybridteaching_enabled_name'] = 'Enable mod_hybridteaching integration';
 $string['modhybridteaching_enabled_description'] = 'Enable or disable mod_hybridteaching integration';
+$string['modhybridteaching_notavailable'] = 'mod_hybridteaching plugin not available';
+$string['modhybridteaching_notavailable_description'] = 'mod_hybridteaching plugin can be used to manage attendance in Moodle. You can find it at <a href="https://unimoodle.github.io/moodle-mod_hybridteaching/">https://unimoodle.github.io/moodle-mod_hybridteaching/</a>';
+
 $string['field_mapping_heading'] = 'Field mapping';
 $string['field_mapping_description'] = 'Field names from which to extract user data';
