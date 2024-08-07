@@ -32,7 +32,7 @@ class local_attendancewebhook_external extends external_api
         try {
             $context = context_system::instance();
             self::validate_context($context);
-            if (get_config('local_attendancewebhook', 'mod_attendance_enabled')) {
+            if (get_config('local_attendancewebhook', 'modattendance_enabled')) {
 
                 if (get_config('local_attendancewebhook', 'export_courses_as_topics')) {
                     require_capability('moodle/course:manageactivities', $context);

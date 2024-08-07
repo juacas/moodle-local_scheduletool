@@ -106,6 +106,7 @@ class modattendance_target extends target_base
         $sesslog->statusid = $status->id;
         $sesslog->timetaken = $attendance->get_server_time();
         $sesslog->remarks = $attendance->get_attendance_note();
+        $sesslog->takenby = $this->logtaker_user->id;
         // Sets the author of the log: mod_attendance uses $USER.
         $currentuser = $USER;
         $USER = $this->logtaker_user;
