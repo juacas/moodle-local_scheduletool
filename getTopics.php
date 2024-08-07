@@ -84,7 +84,7 @@ try {
 }
 
 $PAGE->set_context(null);
-header('Content-Type: text/json; charset=utf-8');
+header('Content-Type: application/json;charset=UTF-8');
 
 // Check apikey and apiuser aginst config.
 if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != get_config('local_attendancewebhook', 'apiuser')) {

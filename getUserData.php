@@ -42,7 +42,7 @@ try {
 }
 
 $PAGE->set_context(null);
-header('Content-Type: text/json; charset=utf-8');
+header('Content-Type: application/json;charset=UTF-8');
 
 // Check apikey and apiuser aginst config.
 if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != get_config('local_attendancewebhook', 'apiuser')) {
@@ -92,7 +92,7 @@ if (empty($user->$NIAField)) {
 
 $attendancecourses = get_user_capability_course('mod/attendance:takeattendances', $user->id);
 
-if (count($attendancecourses) > 0) {
+if ($attendancecourses && count($attendancecourses) > 0) {
     $user->rol = 'ORGANISER';
 } else {
     $user->rol = 'ATTENDEE';
