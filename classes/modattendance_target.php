@@ -153,7 +153,7 @@ class modattendance_target extends target_base
                     'name' => $course->shortname . ":" . $att->name . " " . $description,
                     'info' => $info,
                     'externalIntegration' => true,
-                    'tag' => "{$course->shortname}/{$att->name}/{$description}/{$info}",
+                    'tag' => "{$course->shortname}/{$att->name}",
                     'calendar' => [// format: 2021-09-01
                         'startDate' => date('Y-m-d', $session->sessdate),
                         'endDate' => date('Y-m-d', $session->sessdate + $session->duration),
