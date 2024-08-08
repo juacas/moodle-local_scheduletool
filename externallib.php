@@ -135,6 +135,8 @@ class local_attendancewebhook_external extends external_api
 
                 if (count($errors) > 0) {
                     \local_attendancewebhook\lib::notify_error($config, $event, $errors);
+                    // One error means that the attendance was not saved.
+                    return false;
                 }
                 return true;
             }

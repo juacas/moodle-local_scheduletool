@@ -40,6 +40,8 @@ class attendance_event
         $this->set_event_note(clean_param($object->eventNote, PARAM_TEXT));
         $this->set_member($object->member);
         $this->set_server_time($object->serverTime);
+        $this->set_mode($object->mode);
+        $this->set_attendance_note($object->attendanceNote);
     }
 
     public function __toString()
@@ -133,7 +135,7 @@ class attendance_event
             'member' => $this->get_topic()->get_member(),
             'mode' => $this->get_mode(),
             'attendanceNote' => $this->get_attendance_note(),
-            'serverTime' => $this->get_server_time(),
+            'serverTime' => date('c', $this->get_server_time()),
         ];
         return [
            new attendance($attendanceobj)
