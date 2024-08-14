@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Give user data to the app.
+ * CloseEvent. Recport final results with a set of attendances.
  *
  * @package    local_attendancewebhook
  * @copyright  2024 University of Valladoild, Spain
@@ -35,7 +35,7 @@ if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
 try {
     $apikey = required_param('apikey', PARAM_ALPHANUMEXT);
     $apiuser = required_param('apiuser', PARAM_ALPHANUMEXT);
-    $userid = required_param('userid', PARAM_ALPHANUMEXT);
+
 } catch (moodle_exception $e) {
     header('HTTP/1.0 400 Bad Request');
     die();
@@ -49,25 +49,9 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != ge
     header('HTTP/1.0 401 Unauthorized');
     die();
 }
-// Find userid.
-$user_data = local_attendancewebhook\lib::get_user_data($userid);
-$remote_user_data = local_attendancewebhook\lib::get_user_data_remote($userid);
-// User not found.
-if (!$user_data && count($remote_user_data) == 0) {
-    header('HTTP/1.0 404 Not Found');
-    die();
-}
-// Merge user data from local and remote selecting users with type "ORGANIZER" first.
-foreach ($remote_user_data as $remote_user) {
-    if ($remote_user->type == 'ORGANIZER') {
-        $user_data = $remote_user;
-        break;
-    }
-    if (!$user_data) {
-        $user_data = $remote_user;
-    }
-}
+// TODO: Execute CloseEvent logic
+$userresponse = local_attendancewebhook\lib::close_event_request();
 
-$response = json_encode($user_data, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
 
+$response = json_encode($userresponse, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
 echo $response;

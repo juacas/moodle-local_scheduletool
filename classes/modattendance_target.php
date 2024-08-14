@@ -133,6 +133,7 @@ class modattendance_target extends target_base
         $coursesid = array_map(function ($course) {
             return $course->id;
         }, $courses);
+        $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
         $attendances = $DB->get_records_list('attendance', 'course', $coursesid);
         foreach ($attendances as $attendance) {
             $cm = get_coursemodule_from_instance('attendance', $attendance->id, 0, false, MUST_EXIST);
@@ -149,7 +150,7 @@ class modattendance_target extends target_base
                 $info = "{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')';
                 $days = ["L", "M", "X", "J", "V", "S", "D"];
                 $topics[] = [
-                    'topicId' => 'attendance-' . $cm->id . '-' . $session->id,
+                    'topicId' => $prefix . '-attendance-' . $cm->id . '-' . $session->id,
                     'name' => $course->shortname . ":" . $att->name . " " . $description,
                     'info' => $info,
                     'externalIntegration' => true,

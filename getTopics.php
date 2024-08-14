@@ -91,7 +91,7 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != ge
     header('HTTP/1.0 401 Unauthorized');
     die();
 }
-// Find userid.
+// Find userid. TODO: Bypass this check if user is in remotes. Use getUserData()
 $useridfield = get_config('local_attendancewebhook', 'user_id');
 $user = $DB->get_record('user', [$useridfield => $userid], '*');
 
@@ -99,22 +99,14 @@ if (!$user) {
     header('HTTP/1.0 404 Not Found');
     die();
 }
+
 try {
-    $topics = [];
-    // Courses can't be topics without POD.
-    // TODO: Get Timetables from POD.
-    if (get_config('local_attendancewebhook', 'export_courses_as_topics')) {
-        $courses = course_target::get_topics($user);
-        $topics  = array_merge($topics, $courses);
-    }
-    if (get_config('local_attendancewebhook', 'modattendance_enabled')) {
-        $mods = modattendance_target::get_topics($user);
-        $topics = array_merge($topics, $mods);
-    }
-    if (get_config('local_attendancewebhook', 'modhybridteaching_enabled')) {
-        $mods = modhybridteaching_target::get_topics($user);
-        $topics = array_merge($topics, $mods);
-    }
+    $topics = lib::get_local_topics($user);
+    // Get  proxyes topics.
+    $remote_topics = lib::get_remote_topics($user);
+    // Fuse topics.
+    $topics = array_merge($topics, $remote_topics);
+    
     $response = [ "topics" => $topics ];
     $response = json_encode($response, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
     

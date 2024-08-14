@@ -57,7 +57,7 @@ abstract class target_base
     {
         global $DB;
         $topicparts = explode('-', $topicId);
-        if (count($topicparts) != 3) {
+        if (count($topicparts) != 4 || $topicparts[0] != get_config('local_attendancewebhook', 'prefix')) {
             $msg = 'Invalid topicId format: ' . $topicId;
             lib::log_error($msg);
             $this->errors[] = $msg;

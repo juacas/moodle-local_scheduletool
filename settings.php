@@ -257,6 +257,65 @@ if ($hassiteconfig) {
         )
     );
     $settings->hide_if('local_attendancewebhook/apiuser', 'local_attendancewebhook/restservices_enabled', 'notchecked');
+    // Prefix for identifiers in REST services.
+    $settings->add(
+        new admin_setting_configtext(
+            'local_attendancewebhook/restservices_prefix',
+            new lang_string('restservices_prefix_name', 'local_attendancewebhook'),
+            new lang_string('restservices_prefix_description', 'local_attendancewebhook'),
+            'moodle',
+            PARAM_TEXT,
+            64
+        )
+    );
+    $settings->hide_if('local_attendancewebhook/restservices_prefix', 'local_attendancewebhook/restservices_enabled', 'notchecked');
 
+    // REST Multiplexer.
+    // Enter a list of enndpoints line by line for getTopic endpoint.
+    $settings->add(
+        new admin_setting_configtextarea(
+            'local_attendancewebhook/restservices_getTopics',
+            new lang_string('restservices_getTopics_name', 'local_attendancewebhook'),
+            new lang_string('restservices_getTopics_description', 'local_attendancewebhook'),
+            '',
+            PARAM_RAW_TRIMMED
+        )
+    );
+    $settings->hide_if('local_attendancewebhook/restservices_getTopics', 'local_attendancewebhook/restservices_enabled', 'notchecked');
+    // Enter a list of enndpoints line by line for getUserData endpoint.
+    $settings->add(
+        new admin_setting_configtextarea(
+            'local_attendancewebhook/restservices_getUserData',
+            new lang_string('restservices_getUserData_name', 'local_attendancewebhook'),
+            new lang_string('restservices_getUserData_description', 'local_attendancewebhook'),
+            '',
+            PARAM_TEXT
+        )
+    );
+    $settings->hide_if('local_attendancewebhook/restservices_getUserData', 'local_attendancewebhook/restservices_enabled', 'notchecked');
+    // Enter a list of enndpoints line by line for closeEvent endpoint.
+    $settings->add(
+        new admin_setting_configtextarea(
+            'local_attendancewebhook/restservices_closeEvent',
+            new lang_string('restservices_closeEvent_name', 'local_attendancewebhook'),
+            new lang_string('restservices_closeEvent_description', 'local_attendancewebhook'),
+            '',
+            PARAM_TEXT
+        )
+    );
+    $settings->hide_if('local_attendancewebhook/restservices_closeEvent', 'local_attendancewebhook/restservices_enabled', 'notchecked');
+    // Enter a list of enndpoints line by line for signUp endpoint.
+    $settings->add(
+        new admin_setting_configtextarea(
+            'local_attendancewebhook/restservices_signUp',
+            new lang_string('restservices_signUp_name', 'local_attendancewebhook'),
+            new lang_string('restservices_signUp_description', 'local_attendancewebhook'),
+            '',
+            PARAM_TEXT
+        )
+    );
+    $settings->hide_if('local_attendancewebhook/restservices_signUp', 'local_attendancewebhook/restservices_enabled', 'notchecked');
+
+   
 
 }

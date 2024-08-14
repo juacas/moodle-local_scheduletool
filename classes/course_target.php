@@ -32,7 +32,7 @@ class course_target extends modattendance_target
     function parse_topic_id(string $topicId) {
         global $DB;
         $topicparts = explode('-', $topicId);
-        if (count($topicparts) != 2) {
+        if (count($topicparts) != 3 || $topicparts[0] != get_config('local_attendancewebhook', 'prefix')) {
            throw new \Exception("Invalid topicId format: {$topicId}");
         }
         $courseid = $topicparts[1];
@@ -150,12 +150,13 @@ class course_target extends modattendance_target
         if (empty($courses)) {
             return $topics;
         }
+        $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
         foreach($courses as $course) {
             global $DB;
             // Get course data.
             $course = $DB->get_record('course', array('id' => $course->id), '*', MUST_EXIST);
             $topics[] = [
-                'topicId' => 'course-' . $course->id,
+                'topicId' => $prefix . '-course-' . $course->id,
                 'name' => $course->shortname,
                 'info' => $course->fullname,
                 'externalIntegration' => true,

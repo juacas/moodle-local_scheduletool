@@ -147,6 +147,7 @@ class modhybridteaching_target extends target_base
         $coursesid = array_map(function ($course) {
             return $course->id;
         }, $courses);
+        $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
         $hybridteachings = $DB->get_records_list('hybridteaching', 'course', $coursesid);
         foreach ($hybridteachings as $hybridteaching) {
             $cm = get_coursemodule_from_instance('hybridteaching', $hybridteaching->id, 0, false, MUST_EXIST);
@@ -171,7 +172,7 @@ class modhybridteaching_target extends target_base
                 $description = content_to_text($session->description, FORMAT_MOODLE);
                 $info = "{$course->fullname}: " . userdate($session->starttime) . '(' . format_time($session->duration) . ')';
                 $topics[] = [
-                    'topicId' => 'hybridteaching-' . $cm->id . '-' . $session->id,
+                    'topicId' => $prefix . '-hybridteaching-' . $cm->id . '-' . $session->id,
                     'name' => $course->shortname . ":" . $hybridteaching->name . " " . $description,
                     'info' => $info,
                     'externalIntegration' => true,
