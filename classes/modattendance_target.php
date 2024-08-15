@@ -149,7 +149,7 @@ class modattendance_target extends target_base
                 $description = content_to_text($session->description, FORMAT_MOODLE);
                 $info = "{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')';
                 $days = ["L", "M", "X", "J", "V", "S", "D"];
-                $topics[] = [
+                $topics[] = (object)[
                     'topicId' => $prefix . '-attendance-' . $cm->id . '-' . $session->id,
                     'name' => $course->shortname . ":" . $att->name . " " . $description,
                     'info' => $info,

@@ -103,7 +103,7 @@ if (!$user) {
 try {
     $topics = lib::get_local_topics($user);
     // Get  proxyes topics.
-    $remote_topics = lib::get_remote_topics($user);
+    $remote_topics = lib::get_remote_topics($userid);
     // Fuse topics.
     $topics = array_merge($topics, $remote_topics);
     

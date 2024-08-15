@@ -155,7 +155,7 @@ class course_target extends modattendance_target
             global $DB;
             // Get course data.
             $course = $DB->get_record('course', array('id' => $course->id), '*', MUST_EXIST);
-            $topics[] = [
+            $topics[] = (object) [
                 'topicId' => $prefix . '-course-' . $course->id,
                 'name' => $course->shortname,
                 'info' => $course->fullname,

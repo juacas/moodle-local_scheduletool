@@ -383,31 +383,42 @@ class lib
     /**
      * Get remote topics for the given user.
      */
-    public static function get_remote_topics($user)
+    public static function get_remote_topics($userid)
     {
         $topics = [];
-        $remotes = lib::get_remotes();
+        $remotes = lib::get_remotes('restservices_getTopics');
        
         foreach ($remotes as $prefix => $url) {
           
             try {
-                $request_url = $url . '&userid=' . $user->id;
+                $request_url = $url . '&userid=' . $userid;
                 // Make a request to the endpoint with curl.
                 $curl = curl_init();
                 curl_setopt($curl, CURLOPT_URL, $request_url);
                 curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+                // Add cookie for X_DEBUG_SESSION.
+                curl_setopt($curl, CURLOPT_COOKIE, "XDEBUG_SESSION=XDEBUG_ECLIPSE");
                 $response = curl_exec($curl);
+                $info = curl_getinfo($curl);
+                if ($info['http_code'] == 401) {
+                    lib::log_error('Unauthorized access to ' . $request_url);
+                    continue;
+                }
+                if ($info['http_code']  == 404) {
+                    continue;
+                }
                 if ($response === false) {
                     lib::log_error('Error getting topics from ' . $request_url . ': ' . curl_error($curl));
                     continue;
                 }
                 // Parse the response.
-                $response = json_decode($response);
-                if (empty($response->topics)) {
+                $responsejson = json_decode($response);
+                if (empty($responsejson->topics)) {
                     continue;
                 }
-                $topics = array_merge($topics, $response->topics);
+                $topics = array_merge($topics, $responsejson->topics);
             } catch (\Exception $e) {
                 lib::log_error('Error getting topics from ' . $request_url . ': ' . $e->getMessage());
             } catch (\Throwable $e) {
@@ -487,7 +498,7 @@ class lib
      * @return array User_data structures collected. Empty array if no user found.
      */
     public static function get_user_data_remote($userid): array {
-        $remotes = lib::get_remotes();
+        $remotes = lib::get_remotes('restservices_getUserData');
         $userresponse = [];
         foreach ($remotes as $prefix => $url) {
             try {
@@ -497,17 +508,27 @@ class lib
                 curl_setopt($curl, CURLOPT_URL, $request_url);
                 curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+                // Add cookie for X_DEBUG_SESSION.
+                curl_setopt($curl, CURLOPT_COOKIE, "XDEBUG_SESSION=XDEBUG_ECLIPSE");
                 $response = curl_exec($curl);
+                $info = curl_getinfo($curl);
+                if ($info['http_code'] == 401) {
+                    lib::log_error('Unauthorized access to ' . $request_url);
+                    continue;
+                }
                 if ($response === false) {
                     lib::log_error('Error getting user data from ' . $request_url . ': ' . curl_error($curl));
                     continue;
                 }
                 // Parse the response.
-                $response = json_decode($response);
-                if (empty($response->user)) {
+                $responsejson = json_decode($response);
+                if (empty($responsejson->userName)) {
+                    lib::log_error('No user data found in response from ' . $request_url . " Rseponse: " . $response);
                     continue;
+
                 }
-                $userresponse = array_merge($userresponse, $response->user);
+                $userresponse[] = $responsejson;
             } catch (\Exception $e) {
                 lib::log_error('Error getting user data from ' . $request_url . ': ' . $e->getMessage());
             } catch (\Throwable $e) {
@@ -519,8 +540,8 @@ class lib
     /**
      * Get configured remotes.
      */
-    public static function get_remotes() {
-        $remotes = get_config('local_attendancewebhook', 'restservices_getTopics');
+    public static function get_remotes($type) {
+        $remotes = get_config('local_attendancewebhook', $type);
         // Each line is a proxyed endpoint with fomat: Prefix|URL.
         // Split lines.
         $remotes = explode("\n", $remotes);

@@ -171,7 +171,7 @@ class modhybridteaching_target extends target_base
                 // Create info text from dates.
                 $description = content_to_text($session->description, FORMAT_MOODLE);
                 $info = "{$course->fullname}: " . userdate($session->starttime) . '(' . format_time($session->duration) . ')';
-                $topics[] = [
+                $topics[] = (object) [
                     'topicId' => $prefix . '-hybridteaching-' . $cm->id . '-' . $session->id,
                     'name' => $course->shortname . ":" . $hybridteaching->name . " " . $description,
                     'info' => $info,
