@@ -59,7 +59,7 @@ if (!$user_data && count($remote_user_data) == 0) {
 }
 // Merge user data from local and remote selecting users with type "ORGANIZER" first.
 foreach ($remote_user_data as $remote_user) {
-    if ($remote_user->type == 'ORGANIZER') {
+    if ($remote_user->rol == 'ORGANISER') {
         $user_data = $remote_user;
         break;
     }

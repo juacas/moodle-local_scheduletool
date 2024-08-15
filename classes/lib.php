@@ -479,7 +479,7 @@ class lib
             'email' => $user->email,
             'rol' => $user->rol,
         ];
-        return $userresponse;
+        return (object) $userresponse;
     }
     /**
      * Get user_data_remote from the given user.
