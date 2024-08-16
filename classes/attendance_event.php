@@ -20,7 +20,6 @@ defined('MOODLE_INTERNAL') || die();
 
 class attendance_event
 {
-
     private $topic;
     private $opening_time;
     private $closing_time;
@@ -29,8 +28,12 @@ class attendance_event
     private $server_time;
     private $attendance_note;
     private $mode;
-    public function __construct($object)
+    private $source;
+
+    public function __construct($json)
     {
+        $this->source = $json;
+        $object = json_decode($json);
         if (!is_object($object) && ! $object instanceof \stdClass) {
             throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
         }
@@ -141,5 +144,7 @@ class attendance_event
            new attendance($attendanceobj)
         ];
     }
-
+    public function get_source() {
+        return $this->source;
+    }
 }

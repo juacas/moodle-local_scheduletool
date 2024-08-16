@@ -18,8 +18,8 @@ namespace local_attendancewebhook;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once ($CFG->dirroot . '/course/lib.php');
-require_once ($CFG->dirroot . '/user/lib.php');
+require_once($CFG->dirroot . '/course/lib.php');
+require_once($CFG->dirroot . '/user/lib.php');
 
 class lib
 {
@@ -42,8 +42,7 @@ class lib
     {
         $json = file_get_contents("php://input");
         self::log_info('Request received: ' . $json);
-        $object = json_decode($json);
-        $event = new event($object);
+        $event = new event($json);
         $message = 'Activity of type ' . $event->get_topic()->get_type() . '.';
         if ($event->get_topic()->get_type() !== 'COMMON') { // TODO: type COMMON???
             self::log_error($message);
@@ -57,8 +56,8 @@ class lib
     {
         $json = file_get_contents("php://input");
         self::log_info('Request received: ' . $json);
-        $object = json_decode($json);
-        $event = new attendance_event($object);
+        
+        $event = new attendance_event($json);
         $message = 'Activity of type ' . $event->get_topic()->get_type() . '.';
         if ($event->get_topic()->get_type() !== 'COMMON') { // TODO: type COMMON???
             self::log_error($message);
@@ -387,9 +386,9 @@ class lib
     {
         $topics = [];
         $remotes = lib::get_remotes('restservices_getTopics');
-       
+
         foreach ($remotes as $prefix => $url) {
-          
+
             try {
                 $request_url = $url . '&userid=' . $userid;
                 // Make a request to the endpoint with curl.
@@ -406,7 +405,7 @@ class lib
                     lib::log_error('Unauthorized access to ' . $request_url);
                     continue;
                 }
-                if ($info['http_code']  == 404) {
+                if ($info['http_code'] == 404) {
                     continue;
                 }
                 if ($response === false) {
@@ -497,7 +496,8 @@ class lib
      * @param $userid string User id.
      * @return array User_data structures collected. Empty array if no user found.
      */
-    public static function get_user_data_remote($userid): array {
+    public static function get_user_data_remote($userid): array
+    {
         $remotes = lib::get_remotes('restservices_getUserData');
         $userresponse = [];
         foreach ($remotes as $prefix => $url) {
@@ -540,7 +540,8 @@ class lib
     /**
      * Get configured remotes.
      */
-    public static function get_remotes($type) {
+    public static function get_remotes($type)
+    {
         $remotes = get_config('local_attendancewebhook', $type);
         // Each line is a proxyed endpoint with fomat: Prefix|URL.
         // Split lines.
@@ -554,5 +555,125 @@ class lib
             $remotes_result[$parts[0]] = $parts[1];
         }
         return $remotes_result;
+    }
+    /**
+     * Process save_attendance request.
+     */
+    public static function process_save_attendance()
+    {
+        try {
+            $event = \local_attendancewebhook\lib::get_attendance_event();
+            if (!$event) {
+                return false;
+            }
+
+            $config = \local_attendancewebhook\lib::get_config();
+            if (!$config) {
+                return false;
+            }
+
+            $errors = [];
+
+            // If Rest services are enabled, check topicId format.
+            if ($config->restservices_enabled) {
+                global $DB;
+                $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
+                $att_target->errors = &$errors;
+                $att_target->register_attendances();
+
+                if (count($errors) > 0) {
+                    \local_attendancewebhook\lib::notify_error($config, $event, $errors);
+                    // One error means that the attendance was not saved.
+                    return false;
+                }
+                return true;
+            }
+
+        } catch (Exception $e) {
+
+            \local_attendancewebhook\lib::log_error($e);
+            if ($event && $config) {
+                \local_attendancewebhook\lib::notify_error($config, $event, $errors);
+            }
+        }
+        return false;
+    }
+    /**
+     * Process add_session request.
+     */
+    public static function process_add_session()
+    {
+        global $CFG;
+        try {
+            $event = \local_attendancewebhook\lib::get_event();
+            if (!$event) {
+                return false;
+            }
+
+            $config = \local_attendancewebhook\lib::get_config();
+            if (!$config) {
+                return false;
+            }
+            $errors = [];
+            // If Rest services are enabled, load controller for topicId type.
+            if ($config->restservices_enabled) {
+
+                list($type, $prefix, $topicId) = \local_attendancewebhook\target_base::parse_topic_id($event->get_topic()->get_topic_id());
+                if ($prefix == $config->restservices_prefix) {
+                    // Local request.
+                    $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
+                    $att_target->errors = &$errors;
+                    $att_target->register_attendances();
+    
+                    if (count($errors) > 0) {
+                        \local_attendancewebhook\lib::notify_error($config, $event, $errors);
+                        return false;
+                    }
+                    return true;
+                } else {
+                    // Try to execute a proxyed request.
+                    $remotes = \local_attendancewebhook\lib::get_remotes('restservices_closeEvent');
+                    if (count($remotes) > 0) {
+                        if (array_key_exists($prefix, $remotes)) {
+                            $request_url = $remotes[$prefix];
+                            // Make a request to the endpoint with curl.
+                            $curl = curl_init();
+                            curl_setopt($curl, CURLOPT_URL, $request_url);
+                            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                            // Set the request as POST.
+                            curl_setopt($curl, CURLOPT_POST, true);
+                            // Set the request data as JSON.
+                            curl_setopt($curl, CURLOPT_POSTFIELDS, $event->get_source());
+                            curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+                            if ($CFG->debug >= DEBUG_DEVELOPER) {
+                                // Debugging.
+                                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+                                curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+                                // Add cookie for X_DEBUG_SESSION.
+                                curl_setopt($curl, CURLOPT_COOKIE, "XDEBUG_SESSION=XDEBUG_ECLIPSE");
+                            }
+
+                            $response = curl_exec($curl);
+                            $info = curl_getinfo($curl);
+                            if ($info['http_code'] == 401) {
+                                lib::log_error('Unauthorized access to ' . $request_url);
+                                return false;
+                            }
+                            
+                            return $response;
+                        }
+                    }
+                }
+
+            }
+
+        } catch (\Exception $e) {
+
+            \local_attendancewebhook\lib::log_error($e);
+            if ($event && $config) {
+                \local_attendancewebhook\lib::notify_error($config, $event, $errors);
+            }
+        }
+        return false;
     }
 }

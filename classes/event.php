@@ -29,8 +29,11 @@ class event {
     private $event_note;
 
     private $attendances;
+    private $source;
 
-    public function __construct($object) {
+    public function __construct($json) {
+        $this->source = $json;
+        $object = json_decode($json);
         if (!is_object($object)) {
             throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
         }
@@ -95,5 +98,7 @@ class event {
             $this->attendances[] = new attendance($object);
         }
     }
-
+    public function get_source() {
+        return $this->source;
+    }
 }

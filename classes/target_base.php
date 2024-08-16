@@ -41,7 +41,7 @@ abstract class target_base
         $this->event = $event;
         $topicId = $event->get_topic()->get_topic_id();
 
-        $this->parse_topic_id($topicId);
+        $this->setup_from_topic_id($topicId);
         // Find taker.
         $member = $event->get_topic()->get_member();
         $this->logtaker_user = lib::get_user($config, $member);
@@ -53,24 +53,45 @@ abstract class target_base
      * @global \moodle_database $DB
      * @return void
      */
-    protected function parse_topic_id(string $topicId)
+    protected function setup_from_topic_id(string $topicId)
     {
         global $DB;
-        $topicparts = explode('-', $topicId);
-        if (count($topicparts) != 4 || $topicparts[0] != get_config('local_attendancewebhook', 'prefix')) {
+        try {
+            list($type, $prefix, $cmid, $sessionid) = self::parse_topic_id($topicId);
+        } catch (\Exception $e) {
             $msg = 'Invalid topicId format: ' . $topicId;
             lib::log_error($msg);
             $this->errors[] = $msg;
             throw new \Exception($msg);
         }
-
-        $cmid = $topicparts[1] ?? null;
-        $this->sessionid = $topicparts[2] ?? null;
+        
+        $this->type = $type;
+        
+        $this->sessionid = $sessionid;
         $this->set_cm($cmid);
         $this->course = $DB->get_record('course', array('id' => $this->cm->course), '*', MUST_EXIST);
     }
     /**
-     * Set de coursemodule
+     * Parse topicId to get type, prefix, cmid and sessionid.
+     * @param string $topicId
+     * @throws \Exception
+     * @return string[] array of type, prefix, and the rest of parts as: cmid and sessionid.
+     */
+    public static function parse_topic_id(string $topicId)
+    {
+        $topicparts = explode('-', $topicId);
+        
+        if (count($topicparts) < 3 || $topicparts[0] == '' || $topicparts[1] == '') {
+            throw new \Exception("Invalid topicId format: {$topicId}");
+        }
+        $type = $topicparts[1];
+        $prefix = $topicparts[0];
+        $cmid = $topicparts[2] ?? null;
+        $sessionid = $topicparts[3] ?? null;
+        return [$type, $prefix, $cmid, $sessionid];
+    }
+    /**
+     * Set de coursemodule. Load the coursemodule and the context.
      * @param mixed|\cm_info|\stdClass $cm id or cm object
      * @return void
      */
@@ -100,9 +121,8 @@ abstract class target_base
      */
     static public function get_target(object $event, $config): target_base
     {
-        $topicId = $event->get_topic()->get_topic_id();
-        $topicidparts = explode('-', $topicId);
-        $type = $topicidparts[0];
+        list($type) = self::parse_topic_id($event->get_topic()->get_topic_id());
+        
 
         // Check if the integration is enabled.
         if ($config->modhybridteaching_enabled == false && $type == 'hybridteaching') {

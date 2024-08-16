@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * CloseEvent. Report final results with a set of attendances.
+ * SignUp. Report an individual attendance.
  *
  * @package    local_attendancewebhook
  * @copyright  2024 University of Valladoild, Spain
@@ -50,4 +50,4 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != ge
     die();
 }
 // CLose_event is actually an add_session web service request.
-echo local_attendancewebhook\lib::process_add_session();
+echo local_attendancewebhook\lib::process_save_attendance();

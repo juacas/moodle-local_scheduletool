@@ -29,14 +29,24 @@ class course_target extends modattendance_target
         global $DB;
         parent::__construct($event, $config);
     }
-    function parse_topic_id(string $topicId) {
+    function setup_from_topic_id(string $topicId)
+    {
         global $DB;
+        list($type, $prefix, $courseid) = self::parse_topic_id($topicId);
+        $this->course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+    }
+    /**
+     * Parse topicId to get cmid and courseid.
+     * @param string $topicId
+     * @return array [type, prefix, courseid]
+     */
+    public static function parse_topic_id(string $topicId): array
+    {
         $topicparts = explode('-', $topicId);
-        if (count($topicparts) != 3 || $topicparts[0] != get_config('local_attendancewebhook', 'prefix')) {
-           throw new \Exception("Invalid topicId format: {$topicId}");
+        if (count($topicparts) != 3 || $topicparts[0] == '' || $topicparts[1] != 'course' || !is_numeric($topicparts[2])) {
+            throw new \Exception("Invalid course topicId format: {$topicId}");
         }
-        $courseid = $topicparts[1];
-        $this->course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
+        return ['course', $topicparts[0], $topicparts[2]];
     }
     /**
      * Search a session with the same opening time. If not found, create a new one.
@@ -51,7 +61,7 @@ class course_target extends modattendance_target
         global $DB;
         $params = ['attendanceid' => $this->cm->instance, 'sessdate' => $this->event->get_opening_time()];
         $sessions = $DB->get_records('attendance_sessions', $params);
-        $message = count($sessions).' attendance session(s) '.json_encode($params).' found.';
+        $message = count($sessions) . ' attendance session(s) ' . json_encode($params) . ' found.';
         if (count($sessions) > 1) {
             $this->errors[] = $message;
             lib::log_error($message);
@@ -71,7 +81,7 @@ class course_target extends modattendance_target
 
                 $sessid = $this->att_struct->add_session($session);
                 $this->sessionid = $sessid;
-                
+
                 lib::log_info('Attendance session created.');
             }
         }
@@ -107,7 +117,7 @@ class course_target extends modattendance_target
             $cm = reset($cms);
         }
         $this->set_cm($cm);
-        
+
         // Initialice the class info.
         $this->load_modattendance();
 
@@ -127,7 +137,7 @@ class course_target extends modattendance_target
             lib::log_info('Module name updated.');
         }
         // Force to be in section $config->module_section.        
-        if ( $this->config->module_section != $cm->sectionnum) {
+        if ($this->config->module_section != $cm->sectionnum) {
             lib::log_info('Section number modified.');
             $forcedsection = $cminfo->get_section_info($this->config->module_section);
             if (!$forcedsection) {
@@ -141,7 +151,8 @@ class course_target extends modattendance_target
     /**
      * Implements get_topics for course_target.
      */
-    static public function get_topics($user):array {
+    static public function get_topics($user): array
+    {
         // Collect all courses in which the user is teacher: Has any of:
         // 'mod/attendance:addinstance'
         $topics = [];
@@ -151,7 +162,7 @@ class course_target extends modattendance_target
             return $topics;
         }
         $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
-        foreach($courses as $course) {
+        foreach ($courses as $course) {
             global $DB;
             // Get course data.
             $course = $DB->get_record('course', array('id' => $course->id), '*', MUST_EXIST);
