@@ -50,6 +50,5 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != ge
     die();
 }
 // Close_event is actually an add_session web service request.
-// TODO: Give capabilities to $USER to create activities. or remove this php and use only external services.
 $response = local_attendancewebhook\lib::process_save_attendance();
 echo $response==1?'true':$response;

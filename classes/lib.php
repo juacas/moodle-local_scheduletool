@@ -508,6 +508,13 @@ class lib
             // If Rest services are enabled, check topicId format.
             if ($config->restservices_enabled) {
                 global $DB;
+
+                // Impersonates the logtaker user.
+                global $USER;
+                $logtaker = \local_attendancewebhook\lib::get_user($config, $event->get_member());
+                $currentuser = $USER;
+                $USER = $logtaker;
+
                 $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
                 $att_target->errors = &$errors;
                 $att_target->register_attendances();
