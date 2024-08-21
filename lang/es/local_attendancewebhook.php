@@ -42,7 +42,7 @@ $string['restservices_description'] = 'Los servicios REST se usan para reportar 
 $string['restservices_enabled_name'] = 'Activa REST services';
 $string['restservices_enabled_description'] = 'Activa o desactiva REST services';
 $string['restservices_apikey_name'] = 'API key';
-$string['restservices_apikey_description'] = 'API key para autenticación en REST services';
+$string['restservices_apikey_description'] = 'API key para autenticación en REST services. Ejemplo aleatorio: {$a}';
 $string['restservices_apiuser_name'] = 'API user';
 $string['restservices_apiuser_description'] = 'API user para autenticación en REST services';
 $string['restservices_fieldNIA'] = 'campo para el NIA';
@@ -53,6 +53,11 @@ $string['modattendance_enabled_name'] = 'Habilitar integración con mod_attendan
 $string['modattendance_enabled_description'] = 'Habilitar o deshabilitar la integración con mod_attendance';
 $string['modattendance_notavailable'] = 'El plugin mod_attendance no está disponible';
 $string['modattendance_notavailable_description'] = 'El plugin mod_attendance se puede usar para gestionar la asistencia en Moodle. Puede encontrarlo en <a href="https://moodle.org/plugins/mod_attendance">https://moodle.org/plugins/mod_attendance</a>';
+
+$string['restservices_useronbehalf'] = 'Ejecutar en nombre de:';
+$string['restservices_useronbehalf_description'] = 'Ejecutar los servicios REST en nombre del usuario seleccionado. Debe tener el permiso global "mod/attendance:addinstance" para crear una instancia de mod_attendance para los eventos de curso';
+$string['restservices_enableincategories'] = 'Habilitar solo en las siguientes categorías';
+$string['restservices_enableincategories_description'] = 'Habilitar los servicios REST solo para los cursos en las categorías seleccionadas y sus subcategorías. Todos los cursos si se deja vacío.';
 
 $string['export_sessions_as_topics_name'] = 'Exportar sesiones como temas';
 $string['export_sessions_as_topics_description'] = 'Las próximas sesiones de asistencia en cualquier instancia de mod_attendance se exportará como un tema';

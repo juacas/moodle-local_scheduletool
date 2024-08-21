@@ -15,6 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 defined('MOODLE_INTERNAL') || die();
+require_once($CFG->dirroot . '/local/attendancewebhook/settingslib.php');
 
 if ($hassiteconfig) {
 
@@ -81,6 +82,22 @@ if ($hassiteconfig) {
         );
         $settings->hide_if('local_attendancewebhook/module_name', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
         $settings->hide_if('local_attendancewebhook/module_name', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
+ 
+        // User for creating instances with rest services.
+        // Select an user to execute services on behalf of.
+        $settings->add(
+            new admin_setting_users_with_capability(
+                'local_attendancewebhook/creatoruser',
+                new lang_string('restservices_useronbehalf', 'local_attendancewebhook'),
+                new lang_string('restservices_useronbehalf_description', 'local_attendancewebhook'),
+                [],
+                'mod/attendance:addinstance'
+            )
+        );
+        $settings->hide_if('local_attendancewebhook/creatoruser', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
+        $settings->hide_if('local_attendancewebhook/creatoruser', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
+        $settings->hide_if('local_attendancewebhook/creatoruser', 'local_attendancewebhook/restservices_enabled', 'notchecked');
+       
 
         $settings->add(
             new admin_setting_configtext(
@@ -143,7 +160,7 @@ if ($hassiteconfig) {
                 $attplugin_available
             )
         );
-        
+
     } else {
         // Settings description with the message that the plugin mod_hybridteaching is not available.
         $settings->add(
@@ -183,7 +200,7 @@ if ($hassiteconfig) {
         )
     );
     $fields = get_user_fieldnames();
-    require_once ($CFG->dirroot . '/user/profile/lib.php');
+    require_once($CFG->dirroot . '/user/profile/lib.php');
     $customfields = profile_get_custom_fields();
     $userfields = [];
     // Make the keys string values and not indexes.
@@ -230,16 +247,27 @@ if ($hassiteconfig) {
             1
         )
     );
+    
+    
+     // Enable only in these course categories.
+     $settings->add(
+        new admin_settings_coursecat_multiselect(
+            'local_attendancewebhook/enableincategories',
+            get_string('restservices_enableincategories', 'local_attendancewebhook'),
+            get_string('restservices_enableincategories_description', 'local_attendancewebhook'))
+    );
+    $settings->hide_if('local_attendancewebhook/enableincategories', 'local_attendancewebhook/restservices_enabled', 'notchecked');
+
     // Generate random API Key.
-    $defaultapikey = bin2hex(random_bytes(32));
+    $exampleapikey = bin2hex(random_bytes(32));
     // If REST services is enabled, show the following settings.
     // Apikey.
     $settings->add(
         new admin_setting_configtext(
             'local_attendancewebhook/apikey',
             new lang_string('restservices_apikey_name', 'local_attendancewebhook'),
-            new lang_string('restservices_apikey_description', 'local_attendancewebhook'),
-            $defaultapikey,
+            new lang_string('restservices_apikey_description', 'local_attendancewebhook', $exampleapikey),
+            !get_config('local_attendancewebhook/apikey') ? $exampleapikey: null,
             PARAM_TEXT,
             64
         )
@@ -315,7 +343,6 @@ if ($hassiteconfig) {
         )
     );
     $settings->hide_if('local_attendancewebhook/restservices_signUp', 'local_attendancewebhook/restservices_enabled', 'notchecked');
-
-   
+  
 
 }

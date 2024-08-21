@@ -148,7 +148,7 @@ abstract class target_base
      */
     public abstract function get_session();
     /**
-     * Check the configuration of the target.
+     * Check and adjust the configuration of the target.
      */
     public abstract function check_configuration();
     /**

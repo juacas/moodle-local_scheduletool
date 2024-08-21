@@ -151,8 +151,10 @@ class modhybridteaching_target extends target_base
         $hybridteachings = $DB->get_records_list('hybridteaching', 'course', $coursesid);
         foreach ($hybridteachings as $hybridteaching) {
             $cm = get_coursemodule_from_instance('hybridteaching', $hybridteaching->id, 0, false, MUST_EXIST);
-            $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
-            $context = \context_module::instance($cm->id);
+            $course = lib::is_course_allowed($cm->course);
+            if (!$course) {
+                continue;
+            }
             $sessions = [];
             
             $sessionsinprogress = sessions_controller::get_sessions_in_progress($hybridteaching->id);

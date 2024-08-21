@@ -40,7 +40,9 @@ class modattendance_target extends target_base
     }
     public function get_session()
     {
-        $this->att_struct->pageparams = (object) ["sessionid" => $this->sessionid]; // Patch attendance structure.
+        $this->att_struct->pageparams = (object) ["sessionid" => $this->sessionid,
+                                            "grouptype" => 0]; // Patch attendance structure.
+
         return $this->att_struct->get_session_info($this->sessionid);
     }
     /**
@@ -50,6 +52,7 @@ class modattendance_target extends target_base
     {
         // Get statuses configured in the attendance activity.
         $statuses = $this->att_struct->get_statuses();
+        
         // Check if lib::STATUS_DESCRIPTIONS and STATUS_ACRONYMS are configured.
         foreach (lib::STATUS_ACRONYMS as $sourcestatus => $acronym) {
             foreach ($statuses as $status) {
@@ -63,9 +66,16 @@ class modattendance_target extends target_base
             $newstatus->attendanceid = $this->att_struct->id;
             $newstatus->acronym = $acronym;
             $newstatus->description = lib::STATUS_DESCRIPTIONS[$sourcestatus];
-            $newstatus->grade = 1;
+            $newstatus->grade = ($sourcestatus == 'NOTPRESENT') ? 0 : 1;
             $newstatus->setnumber = 0;
+            $newstatus->studentavailability = ($sourcestatus == 'UNKNOWN' || $sourcestatus == 'NOTPRESENT')? 0 : 15; // 15 minutes for manual marking.
+
             attendance_add_status($newstatus);
+            if ($sourcestatus == 'NOTPRESENT') {
+                global $DB;
+                $newstatus->setunmarked = 1;
+                $DB->update_record('attendance_statuses', $newstatus);
+            }
         }
     }
     /**
@@ -107,11 +117,12 @@ class modattendance_target extends target_base
         $sesslog->timetaken = $attendance->get_server_time();
         $sesslog->remarks = $attendance->get_attendance_note();
         $sesslog->takenby = $this->logtaker_user->id;
+        $sesslog->statusset = null;
         // Sets the author of the log: mod_attendance uses $USER.
         $currentuser = $USER;
         $USER = $this->logtaker_user;
 
-        $this->att_struct->save_log([$sesslog]);
+        $this->att_struct->save_log([$sesslog->studentid => $sesslog]);
         $USER = $currentuser;
     }
     static public function get_target_name()
@@ -137,7 +148,10 @@ class modattendance_target extends target_base
         $attendances = $DB->get_records_list('attendance', 'course', $coursesid);
         foreach ($attendances as $attendance) {
             $cm = get_coursemodule_from_instance('attendance', $attendance->id, 0, false, MUST_EXIST);
-            $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
+            $course = lib::is_course_allowed($cm->course);
+            if (!$course) {
+                continue;
+            }
             $context = \context_module::instance($cm->id);
             $att = new \mod_attendance_structure($attendance, $cm, $course, $context);
             // TODO: Get sessions by proximity in time.

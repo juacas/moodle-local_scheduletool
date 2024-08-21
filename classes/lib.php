@@ -25,14 +25,16 @@ class lib
 {
 
     const CM_IDNUMBER = 'local_attendancewebhook';
-
+    // TODO: i18n status descriptions.
     const STATUS_DESCRIPTIONS = array(
+        'NOTPRESENT' => 'NO PRESENTADO',
         'UNKNOWN' => 'ASISTENCIA',
         'ON_SITE' => 'PRESENCIAL',
         'DISTANCE' => 'A DISTANCIA'
     );
 
     const STATUS_ACRONYMS = array(
+        'NOTPRESENT'  => 'NP', 
         'UNKNOWN' => 'AS',
         'ON_SITE' => 'PR',
         'DISTANCE' => 'DS'
@@ -44,7 +46,7 @@ class lib
         self::log_info('Request received: ' . $json);
         $event = new event($json);
         $message = 'Activity of type ' . $event->get_topic()->get_type() . '.';
-        if ($event->get_topic()->get_type() !== 'COMMON') { // TODO: type COMMON???
+        if ($event->get_topic()->get_type() !== 'COMMON') {
             self::log_error($message);
             return false;
         } else {
@@ -56,7 +58,7 @@ class lib
     {
         $json = file_get_contents("php://input");
         self::log_info('Request received: ' . $json);
-        
+
         $event = new attendance_event($json);
         $message = 'Activity of type ' . $event->get_topic()->get_type() . '.';
         if ($event->get_topic()->get_type() !== 'COMMON') { // TODO: type COMMON???
@@ -109,80 +111,7 @@ class lib
             return $courses[array_keys($courses)[0]];
         }
     }
-    /**
-     * @param $config
-     * @param $course
-     * @param $module
-     * @return bool|\stdClass
-     */
-    public static function get_course_module($config, $course, $module)
-    {
-        global $DB; // TODO: Use cm_info instead of course_modules.
-
-        // Search attendance module in course with idnumber = self::CM_IDNUMBER using cached cm_modinfo.
-        $cminfo = get_fast_modinfo($course);
-        $cms = $cminfo->get_instances_of('attendance');
-        $cms = array_filter($cms, function ($cm) {
-            return $cm->idnumber === self::CM_IDNUMBER && $cm->deletioninprogress === 0;
-        });
-        $cm = reset($cms);
-
-        $message = count($cms) . ' course modules(s) ' . json_encode($params) . ' found.';
-        if (count($cms) > 1) {
-            self::log_error($message);
-            return false;
-        } else {
-            self::log_info($message);
-            if (count($cms) == 1) {
-                $cm = $cms[array_keys($cms)[0]];
-                $params = array('id' => $cm->instance);
-                $attendance = $DB->get_record('attendance', $params);
-
-                // Force the name. Why?
-                if ($attendance->name != $config->module_name) { // TODO: Why name is restored?
-                    self::log_info('Module name modified.');
-                    set_coursemodule_name($cm->id, $config->module_name);
-                    self::log_info('Module name updated.');
-                }
-                // Force to be in section $config->module_section.
-                $params = array('course' => $course->id, 'section' => $config->module_section);
-                $section = $DB->get_record('course_sections', $params);
-                if (!$section || $section->id != $cm->section) {
-                    self::log_info('Section number modified.');
-                    if (!$section) {
-                        self::log_info('Section number not found.');
-                    } else {
-                        moveto_module($cm, $section);
-                        self::log_info('Section number updated.');
-                    }
-                }
-                return $cm;
-            } else {
-                $moduleinfo = new \stdClass();
-                $moduleinfo->course = $course->id;
-                $moduleinfo->modulename = $module->name;
-                $moduleinfo->section = $config->module_section;
-                $moduleinfo->visible = 1;
-                $moduleinfo->introeditor = array('text' => '', 'format' => FORMAT_PLAIN);
-                $moduleinfo->cmidnumber = self::CM_IDNUMBER;
-                $moduleinfo->name = $config->module_name;
-                $cm = create_module($moduleinfo);
-                self::log_info('Course module created.');
-                // $cm = $DB->get_record('course_modules', $params); // This gets also cms in deletion progress state.
-                $DB->delete_records('attendance_statuses', array('attendanceid' => $cm->instance)); // TODO: This is not necessary.
-                foreach (self::STATUS_DESCRIPTIONS as $name => $description) {
-                    $status = new \stdClass();
-                    $status->attendanceid = $cm->instance;
-                    $status->acronym = self::STATUS_ACRONYMS[$name];
-                    $status->description = $description;
-                    $status->id = $DB->insert_record('attendance_statuses', $status);
-                    self::log_info('Attendance status "' . $status->description . '" created.');
-                }
-                return $cm;
-            }
-        }
-    }
-
+   
     public static function get_user_enrol($config, $member, $course)
     {
         global $DB;
@@ -466,18 +395,20 @@ class lib
         } else {
             $nia = $user->$NIAField;
         }
-
-        // Roles are:
-// ORGANISER: users with capability to mod/attendance:takeattendances in any course.
+// Roles are:
+// ORGANISER: users with capability to mod/attendance:takeattendances in any allowed course.
 // ATTENDEE: users without it.
 // TODO: Check mod/hybridteaching:createsessions
+        $user->rol = 'ATTENDEE';
 
         $attendancecourses = get_user_capability_course('mod/attendance:takeattendances', $user->id);
-
-        if ($attendancecourses && count($attendancecourses) > 0) {
-            $user->rol = 'ORGANISER';
-        } else {
-            $user->rol = 'ATTENDEE';
+        if ($attendancecourses) {
+            $attendancecourses = array_filter($attendancecourses, function ($course) {
+                return lib::is_course_allowed($course->id);
+            });
+            if (count($attendancecourses) > 0) {
+                $user->rol = 'ORGANISER';
+            } 
         }
 
         $userresponse = [
@@ -617,6 +548,12 @@ class lib
             $errors = [];
             // If Rest services are enabled, load controller for topicId type.
             if ($config->restservices_enabled) {
+                // Impersonates the logtaker user.
+                global $USER;
+                $logtaker = \local_attendancewebhook\lib::get_user($config, $event->get_topic()->get_member());
+                $currentuser = $USER;
+                $USER = $logtaker;
+
 
                 list($type, $prefix, $topicId) = \local_attendancewebhook\target_base::parse_topic_id($event->get_topic()->get_topic_id());
                 if ($prefix == $config->restservices_prefix) {
@@ -624,7 +561,7 @@ class lib
                     $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
                     $att_target->errors = &$errors;
                     $att_target->register_attendances();
-    
+
                     if (count($errors) > 0) {
                         \local_attendancewebhook\lib::notify_error($config, $event, $errors);
                         return false;
@@ -659,7 +596,7 @@ class lib
                                 lib::log_error('Unauthorized access to ' . $request_url);
                                 return false;
                             }
-                            
+
                             return $response;
                         }
                     }
@@ -675,5 +612,43 @@ class lib
             }
         }
         return false;
+    }
+    /**
+     * Get allowed course categories.
+     * @return array|bool of allowed category ids. True if all categories are allowed.
+     */
+    public static function get_allowed_categories()
+    {
+        $categories = get_config('local_attendancewebhook', 'enableincategories');
+        if (!empty($categories)) {
+            $categories = explode(',', $categories);
+            $categories = array_map('intval', $categories);
+            $subcats = [];
+            foreach ($categories as $category) {
+                $cat = \core_course_category::get($category);
+                $children = $cat->get_children(); // Its cached so no problem.
+                $subcats = array_merge($subcats, array_keys($children));
+            }
+            $categories = array_merge($categories, $subcats);
+            return $categories;
+        } else {
+            return true;
+        }
+    }
+    /**
+     * Check if a course is allowed.
+     * @param $courseid int Course id.
+     * @return \stdClass|bool Course object if allowed. False otherwise.
+     */
+    public static function is_course_allowed($courseid)
+    {
+        global $DB;
+        $categories = \local_attendancewebhook\lib::get_allowed_categories();
+        $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+        if ($course && ($categories === True || in_array($course->category, $categories))) {
+            return $course;
+        } else {
+            return false;
+        }
     }
 }

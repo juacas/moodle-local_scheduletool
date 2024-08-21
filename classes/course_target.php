@@ -76,8 +76,19 @@ class course_target extends modattendance_target
                 $session = new \stdClass();
                 $session->sessdate = $this->event->get_opening_time();
                 $session->duration = $this->event->get_closing_time() - $this->event->get_opening_time();
-                $session->description = $this->event->get_event_note();
                 $session->groupid = 0;
+                $session->description = $this->event->get_event_note();
+                $session->descriptionitemid = -1;
+                $session->descriptionformat = FORMAT_PLAIN;
+                $session->calendarevent = 0; // Disable calendar event creation.
+                $session->timemodified = time();
+                $session->statusset = 0;
+                $session->absenteereport = 1;
+
+                $session->studentscanmark = 1; // Allow students to mark their own attendance.
+                $session->rotateqrcode = 1; // Use a rotating QR code.
+                $session->rotateqrcodesecret = attendance_random_string();
+                $session->studentpassword = attendance_random_string();
 
                 $sessid = $this->att_struct->add_session($session);
                 $this->sessionid = $sessid;
@@ -109,10 +120,13 @@ class course_target extends modattendance_target
             $moduleinfo->modulename = 'attendance';
             $moduleinfo->section = $this->config->module_section;
             $moduleinfo->visible = 1;
-            $moduleinfo->introeditor = ['idnumber' => 0, 'text' => '', 'format' => FORMAT_PLAIN];
+            $moduleinfo->introeditor = ['itemid' => -1, 'idnumber' => 0, 'text' => '', 'format' => FORMAT_PLAIN];
             $moduleinfo->cmidnumber = lib::CM_IDNUMBER;
             $moduleinfo->name = $this->config->module_name;
-            $cm = create_module($moduleinfo);
+            $cmodule = create_module($moduleinfo);
+            // Get cm_info.
+            $cminfo = get_fast_modinfo($this->course);
+            $cm = $cminfo->get_instances_of('attendance')[$cmodule->id];
         } else {
             $cm = reset($cms);
         }
@@ -162,17 +176,19 @@ class course_target extends modattendance_target
             return $topics;
         }
         $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
+
         foreach ($courses as $course) {
-            global $DB;
             // Get course data.
-            $course = $DB->get_record('course', array('id' => $course->id), '*', MUST_EXIST);
-            $topics[] = (object) [
-                'topicId' => $prefix . '-course-' . $course->id,
-                'name' => $course->shortname,
-                'info' => $course->fullname,
-                'externalIntegration' => true,
-                'tag' => 'course',
-            ];
+            $course = lib::is_course_allowed($course->id);
+            if ($course) {
+                $topics[] = (object) [
+                    'topicId' => $prefix . '-course-' . $course->id,
+                    'name' => $course->shortname,
+                    'info' => $course->fullname,
+                    'externalIntegration' => true,
+                    'tag' => 'course',
+                ];
+            }
         }
         return $topics;
     }
