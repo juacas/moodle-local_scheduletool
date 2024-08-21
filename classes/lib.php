@@ -558,7 +558,6 @@ class lib
                 // Impersonates the logtaker user.
                 global $USER;
                 $logtaker = \local_attendancewebhook\lib::get_user($config, $event->get_topic()->get_member());
-                $currentuser = $USER;
                 $USER = $logtaker;
 
 

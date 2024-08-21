@@ -77,7 +77,6 @@ class modhybridteaching_target extends target_base
         // Mark the attendance to the session.
         $currentuser = $USER;
         $USER = $this->logtaker_user;
-        //$log = attendance_controller::hybridteaching_set_attendance($this->hybridteaching, $this->get_session(), HYBRIDTEACHING_ATTSTATUS_VALID, 0, $user->id);
         $this->set_attendance_status($user, HYBRIDTEACHING_ATTSTATUS_VALID);
         $USER = $currentuser;
         } catch (\Exception $e) {

@@ -118,7 +118,7 @@ class modattendance_target extends target_base
         $sesslog->remarks = $attendance->get_attendance_note();
         $sesslog->takenby = $this->logtaker_user->id;
         $sesslog->statusset = null;
-        // Sets the author of the log: mod_attendance uses $USER.
+        // Sets the author of the log: mod_attendance uses $USER. Only needed for webservice entry point.
         $currentuser = $USER;
         $USER = $this->logtaker_user;
 
