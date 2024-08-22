@@ -66,7 +66,7 @@
 namespace local_attendancewebhook;
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir.'/filelib.php');
-/** @var moodle_database $DB */
+/** @var \moodle_database $DB */
 global $DB;
 
 if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
@@ -111,7 +111,7 @@ try {
     $response = json_encode($response, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
     
     echo $response;
-} catch (Exception $e) {
+} catch (\Exception $e) {
     header('HTTP/1.0 500 Internal Server Error: ' . $e->getMessage());
     die();
 }

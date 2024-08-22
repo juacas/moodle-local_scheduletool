@@ -527,7 +527,7 @@ class lib
                 return true;
             }
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
 
             \local_attendancewebhook\lib::log_error($e);
             if ($event && $config) {
