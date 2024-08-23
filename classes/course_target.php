@@ -141,16 +141,16 @@ class course_target extends modattendance_target
             $cminfo = get_fast_modinfo($this->course);
             $cm = $cminfo->get_instances_of('attendance')[$cmodule->id];
             // Notify the module creation.
-            lib::notify($this->config, $this->event, \core\output\notification::NOTIFY_INFO,
-            get_string("notifications_new_activity", "local_attendancewebhook", 
-                ['activityname' => $this->config->module_name,
-                'course' => $this->course->shortname,
-                'courseid' => $this->course->id,
-                'cmid' => $cm->id,
-                'activityurl' => new \moodle_url('/mod/attendance/view.php', ['id' => $cm->id]),
-                'courseurl' => new \moodle_url('/course/view.php', ['id' => $this->course->id])
-            ]));
-             
+            lib::notify($this->config, $this->event, $this->course->id, \core\output\notification::NOTIFY_INFO,
+                get_string("notifications_new_activity", "local_attendancewebhook", 
+                    ['activityname' => $this->config->module_name,
+                    'coursename' => $this->course->shortname,
+                    'courseid' => $this->course->id,
+                    'cmid' => $cm->id,
+                    'activityurl' => new \moodle_url('/mod/attendance/view.php', ['id' => $cm->id]),
+                    'courseurl' => new \moodle_url('/course/view.php', ['id' => $this->course->id])
+                ]));
+                
         } else {
             $cm = reset($cms);
         }

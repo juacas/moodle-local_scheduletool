@@ -90,7 +90,8 @@ class modattendance_target extends target_base
         $user = \local_attendancewebhook\lib::get_user_enrol($this->config, $member, $this->course);
         if (!$user) {
             if (!\local_attendancewebhook\lib::is_tempusers_enabled($this->config)) {
-                $msg = 'User unknown not marked: ' . $member;
+                $msg = get_string('notifications_user_unknown_notmarked', 'local_attendancewebhook', $member);
+                
                 lib::log_error($msg);
                 $this->errors[] = $msg;
                 return;

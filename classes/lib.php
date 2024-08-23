@@ -260,7 +260,7 @@ class lib
             $message->component = 'local_attendancewebhook';
             $message->userfrom = \core_user::get_noreply_user();
             $message->courseid = $courseid;
-            $message->userto = $user->id;
+            $message->userto = $user; // TODO: $user->lang should set the language.
             $message->name = 'notification'; // Provider local_attendancewebhook/notification. It's the only one declared.
             
             $eventstr = strval($event);
@@ -272,7 +272,7 @@ class lib
                             'eventstr' => $eventstr,
                         ];
 
-            $message->subject = get_string('notification_subject', 'local_attendancewebhook', $config->module_name);
+            $message->subject = get_string('notification_subject', 'local_attendancewebhook', $a);
             if ($level == \core\output\notification::NOTIFY_ERROR) {
                 if ($attendances) {
                     $text = get_string('notification_error_attendances', 'local_attendancewebhook', $a);
@@ -580,6 +580,7 @@ class lib
                 if ($prefix == $config->restservices_prefix) {
                     // Impersonates the logtaker user.
                     $USER = $logtaker;
+                    force_current_language($logtaker->lang);
                     // Local request.
                     $att_target->register_attendances();
                 } else if (isset($remotes[$prefix])) {

@@ -32,7 +32,7 @@ $string['notification_subject'] = 'Resultados de {$a->topic}';
 $string['notifications_enabled_description'] = 'Habilitar o deshabilitar las notificaciones';
 $string['notifications_enabled_name'] = 'Notificaciones';
 $string['notifications_new_activity'] = 'Se ha creado el módulo de control de asistencia "{$a->activityname}" en el curso "{$a->coursename}".';
-
+$string['notifications_user_unknown_notmarked'] = 'Usuario no marcado por desconocido: {$a}';
 $string['pluginname'] = 'Asistencia Webhook';
 $string['privacy:metadata:mod_attendance'] = 'El plugin Asistencia Webhook almacena datos en nombre del plugin Asistencia.';
 $string['tempusers_enabled_description'] = 'Habilitar o deshabilitar la creación de usuarios temporales';

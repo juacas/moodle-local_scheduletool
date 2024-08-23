@@ -23,7 +23,7 @@ $string['module_name_description'] = 'Moodle attendance module name';
 $string['module_name_name'] = 'Module name';
 $string['module_section_description'] = 'Moodle attendance module section number';
 $string['module_section_name'] = 'Module section';
-$string['notification_messages'] = 'Resultados:';
+$string['notification_messages'] = 'Outcomes:';
 $string['notification_contact_admin'] = 'Please contact the administrator.';
 $string['notification_error_attendances'] = 'The following attendances of {$a->event}} could not be incorporated:';
 $string['notification_error_event'] = 'The registration in {$a->event} could not be incorporated:';
@@ -32,6 +32,8 @@ $string['notification_subject'] = 'Attendance control results for {$a->topic}';
 $string['notifications_enabled_description'] = 'Enable or disable notifications';
 $string['notifications_enabled_name'] = 'Notifications';
 $string['notifications_new_activity'] = 'New attendance module "{$a->activityname}" was created in course "{$a->coursename}".';
+$string['notifications_user_unknown_notmarked'] = 'User not found, not marked: {$a}';
+
 $string['pluginname'] = 'Attendance Webhook';
 $string['privacy:metadata'] = 'Attendance Webhook plugin stores data on behalf of Attendance plugin.';
 $string['messageprovider:error'] = 'Attendance Webhook notifications error events';
