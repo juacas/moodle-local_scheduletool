@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace local_attendancewebhook;
+use \Exception;
+use \mod_attendance_structure;
 
 defined('MOODLE_INTERNAL') || die();
 /**
@@ -29,11 +31,22 @@ class course_target extends modattendance_target
         global $DB;
         parent::__construct($event, $config);
     }
+    /**
+     * Populate the class with the course and prefix.
+     * @param string $topicId
+     * @return void
+     */
     function setup_from_topic_id(string $topicId)
     {
         global $DB;
         list($type, $prefix, $courseid) = self::parse_topic_id($topicId);
-        $this->course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+        $this->prefix = $prefix;
+        $course = $DB->get_record('course', ['id' => $courseid], '*');
+        if (!$course) {
+            throw new \Exception("Invalid Topic {$topicId}:Course not found: {$courseid}");
+        } else {
+            $this->course = $course;
+        }
     }
     /**
      * Parse topicId to get cmid and courseid.

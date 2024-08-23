@@ -51,4 +51,4 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != ge
 }
 // Close_event is actually an add_session web service request.
 $response = local_attendancewebhook\lib::process_save_attendance();
-echo $response==1?'true':$response;
+echo $response==1?'true':json_encode($response);

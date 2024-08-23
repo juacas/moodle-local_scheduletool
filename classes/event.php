@@ -101,4 +101,7 @@ class event {
     public function get_source() {
         return $this->source;
     }
+    public function get_logtaker() {
+        return $this->get_topic()->get_member();
+    }
 }

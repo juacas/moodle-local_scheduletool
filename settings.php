@@ -85,18 +85,18 @@ if ($hassiteconfig) {
  
         // User for creating instances with rest services.
         // Select an user to execute services on behalf of.
-        $settings->add(
-            new admin_setting_users_with_capability(
-                'local_attendancewebhook/creatoruser',
-                new lang_string('restservices_useronbehalf', 'local_attendancewebhook'),
-                new lang_string('restservices_useronbehalf_description', 'local_attendancewebhook'),
-                [],
-                'mod/attendance:addinstance'
-            )
-        );
-        $settings->hide_if('local_attendancewebhook/creatoruser', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
-        $settings->hide_if('local_attendancewebhook/creatoruser', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
-        $settings->hide_if('local_attendancewebhook/creatoruser', 'local_attendancewebhook/restservices_enabled', 'notchecked');
+        // $settings->add(
+        //     new admin_setting_users_with_capability(
+        //         'local_attendancewebhook/creatoruser',
+        //         new lang_string('restservices_useronbehalf', 'local_attendancewebhook'),
+        //         new lang_string('restservices_useronbehalf_description', 'local_attendancewebhook'),
+        //         [],
+        //         'mod/attendance:addinstance'
+        //     )
+        // );
+        // $settings->hide_if('local_attendancewebhook/creatoruser', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
+        // $settings->hide_if('local_attendancewebhook/creatoruser', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
+        // $settings->hide_if('local_attendancewebhook/creatoruser', 'local_attendancewebhook/restservices_enabled', 'notchecked');
        
 
         $settings->add(

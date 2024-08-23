@@ -34,6 +34,7 @@ abstract class target_base
     public $errors = [];
     public $config;
     public $logtaker_user;
+    public $prefix;
 
     public function __construct(object $event, $config)
     {
@@ -66,7 +67,7 @@ abstract class target_base
         }
         
         $this->type = $type;
-        
+        $this->prefix = $prefix;
         $this->sessionid = $sessionid;
         $this->set_cm($cmid);
         $this->course = $DB->get_record('course', array('id' => $this->cm->course), '*', MUST_EXIST);
@@ -81,7 +82,7 @@ abstract class target_base
     {
         $topicparts = explode('-', $topicId);
         
-        if (count($topicparts) < 3 || $topicparts[0] == '' || $topicparts[1] == '') {
+        if (count($topicparts) < 3 || count($topicparts) > 4 || $topicparts[0] == '' || $topicparts[1] == '') {
             throw new \Exception("Invalid topicId format: {$topicId}");
         }
         $type = $topicparts[1];
@@ -110,14 +111,18 @@ abstract class target_base
         }
         $this->context = \context_module::instance($this->cm->id);
     }
+    public function get_prefix()
+    {
+        return $this->prefix;
+    }
     /**
-     * Instantiate the target object depending on the event data.
+     * Factory Method: Instantiate the target object depending on the event data.
      *  If topicId starts with 'course', it is a course.
      *  It topicId starts with 'hybridteaching', it is a hybrid teaching session.
      *  It topicId starts with 'attendance', it is an attendance session.
      * @param mixed $object
      * @param \local_attendancewebhook\event $event
-     * @return bool|object
+     * @return object
      */
     static public function get_target(object $event, $config): target_base
     {

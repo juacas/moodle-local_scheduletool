@@ -83,7 +83,7 @@ class modhybridteaching_target extends target_base
             lib::log_error($e);
             $this->errors[] = $e->getMessage();
         }
-        return $log;
+        return;
     }
     /**
      * 
