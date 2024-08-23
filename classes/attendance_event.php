@@ -49,10 +49,10 @@ class attendance_event
 
     public function __toString()
     {
-        return date('d-m-Y H:i:s', $this->get_opening_time()) . ' - ' . strval($this->get_topic());
+        return date('d-m-Y H:i:s', $this->get_opening_time()) . ' - ' . strval($this->getTopic());
     }
 
-    public function get_topic()
+    public function getTopic()
     {
         return $this->topic;
     }
@@ -135,7 +135,7 @@ class attendance_event
     public function get_attendances()
     {
         $attendanceobj =(object)[
-            'member' => $this->get_topic()->get_member(),
+            'member' => $this->getTopic()->get_member(),
             'mode' => $this->get_mode(),
             'attendanceNote' => $this->get_attendance_note(),
             'serverTime' => date('c', $this->get_server_time()),

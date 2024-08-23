@@ -40,11 +40,11 @@ abstract class target_base
     {
         $this->config = $config;
         $this->event = $event;
-        $topicId = $event->get_topic()->get_topic_id();
+        $topicId = $event->getTopic()->get_topic_id();
 
         $this->setup_from_topic_id($topicId);
         // Find taker.
-        $member = $event->get_topic()->get_member();
+        $member = $event->getTopic()->get_member();
         $this->logtaker_user = lib::get_user($config, $member);
     }
     /**
@@ -115,6 +115,10 @@ abstract class target_base
     {
         return $this->prefix;
     }
+    public function getCourse()
+    {
+        return $this->course;
+    }
     /**
      * Factory Method: Instantiate the target object depending on the event data.
      *  If topicId starts with 'course', it is a course.
@@ -126,7 +130,7 @@ abstract class target_base
      */
     static public function get_target(object $event, $config): target_base
     {
-        list($type) = self::parse_topic_id($event->get_topic()->get_topic_id());
+        list($type) = self::parse_topic_id($event->getTopic()->get_topic_id());
         
 
         // Check if the integration is enabled.

@@ -22,7 +22,7 @@ class topic {
 
     private $topic_id;
 
-    private $name;
+    public string $name;
 
     private $type;
 
@@ -33,13 +33,13 @@ class topic {
             throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
         }
         $this->set_topic_id(clean_param($object->topicId, PARAM_NOTAGS));
-        $this->set_name(clean_param($object->name, PARAM_TEXT));
+        $this->setName(clean_param($object->name, PARAM_TEXT));
         $this->set_type(clean_param($object->type, PARAM_NOTAGS));
         $this->set_member($object->member);
     }
 
     public function __toString() {
-        return $this->get_name();
+        return $this->getName();
     }
 
     public function get_topic_id() {
@@ -50,11 +50,11 @@ class topic {
         $this->topic_id = $topic_id;
     }
 
-    public function get_name() {
+    public function getName() {
         return $this->name;
     }
 
-    public function set_name($name) {
+    public function setName($name) {
         $this->name = $name;
     }
 

@@ -46,8 +46,8 @@ class lib
         $json = file_get_contents("php://input");
         self::log_info('Request received: ' . $json);
         $event = new event($json);
-        $message = 'Activity of type ' . $event->get_topic()->get_type() . '.';
-        if ($event->get_topic()->get_type() !== 'COMMON') {
+        $message = 'Activity of type ' . $event->getTopic()->get_type() . '.';
+        if ($event->getTopic()->get_type() !== 'COMMON') {
             self::log_error($message);
             return false;
         } else {
@@ -61,8 +61,8 @@ class lib
         self::log_info('Request received: ' . $json);
 
         $event = new attendance_event($json);
-        $message = 'Activity of type ' . $event->get_topic()->get_type() . '.';
-        if ($event->get_topic()->get_type() !== 'COMMON') { // TODO: type COMMON???
+        $message = 'Activity of type ' . $event->getTopic()->get_type() . '.';
+        if ($event->getTopic()->get_type() !== 'COMMON') { // TODO: type COMMON???
             self::log_error($message);
             return false;
         } else {
@@ -101,7 +101,7 @@ class lib
     public static function get_course($config, $event)
     {
         global $DB;
-        $params = array($config->course_id => $event->get_topic()->get_topic_id());
+        $params = array($config->course_id => $event->getTopic()->get_topic_id());
         $courses = $DB->get_records('course', $params);
         $message = count($courses) . ' course(s) ' . json_encode($params) . ' found.';
         if (count($courses) != 1) {
@@ -235,40 +235,70 @@ class lib
         }
         file_put_contents($file, date('Y-m-d H:i:s') . ' ' . $type . ' ' . $message . "\n", FILE_APPEND);
     }
-
-    public static function notify_error($config, $event, $attendances = null)
+    /**
+     * 
+     * Sends a notification to the user (logtaker).
+     * @param mixed $config
+     * @param mixed $event
+     * @param mixed $level \core\output\notification::NOTIFY_INFO|\core\output\notification::NOTIFY_ERROR
+     * @param mixed $attendances
+     * @return void
+     */
+    public static function notify($config, $event, $courseid, $level, $attendances = null)
     {
         if (!$config->notifications_enabled) {
             self::log_info('Notifications disabled.');
             return;
         }
+        if (!is_array($attendances)) {
+            $attendances = [$attendances];
+        }
         self::log_info('Notifications enabled.');
-        $user = self::get_user($config, $event->get_topic()->get_member());
+        $user = self::get_user($config, $event->get_logtaker());
         if ($user) {
             $message = new \core\message\message();
             $message->component = 'local_attendancewebhook';
-            $message->name = 'error';
             $message->userfrom = \core_user::get_noreply_user();
+            $message->courseid = $courseid;
             $message->userto = $user->id;
-            $message->subject = 'Moodle ' . $config->module_name . ': ' . get_string('notification_subject', 'local_attendancewebhook');
-            if ($attendances) {
-                $text = get_string('notification_error_attendances', 'local_attendancewebhook');
-            } else {
-                $text = get_string('notification_error_event', 'local_attendancewebhook');
-            }
-            $message->fullmessage = $text . ' ' . strval($event) . '.';
-            $message->fullmessagehtml = '<p>' . $text . '</p><p>' . strval($event) . '</p>';
-            if ($attendances) {
-                $message->fullmessage .= ' ' . get_string('notification_attendances', 'local_attendancewebhook');
-                foreach ($attendances as &$attendance) {
-                    $message->fullmessage .= ' ' . strval($attendance) . ',';
-                    $message->fullmessagehtml .= '<p>' . strval($attendance) . '</p>';
+            $message->name = 'notification'; // Provider local_attendancewebhook/notification. It's the only one declared.
+            
+            $eventstr = strval($event);
+            $a = (object) ['event' => $event,
+                            'module' => $config->module_name,
+                            'topic' => $event->getTopic(),
+                            'opening_time' => date('d-m-Y H:i', $event->get_opening_time()),
+                            'closing_time' => date('d-m-Y H:i', $event->get_closing_time()),
+                            'eventstr' => $eventstr,
+                        ];
+
+            $message->subject = get_string('notification_subject', 'local_attendancewebhook', $config->module_name);
+            if ($level == \core\output\notification::NOTIFY_ERROR) {
+                if ($attendances) {
+                    $text = get_string('notification_error_attendances', 'local_attendancewebhook', $a);
+                } else {
+                    $text = get_string('notification_error_event', 'local_attendancewebhook', $a);
                 }
-                $message->fullmessage = substr($message->fullmessage, 0, strlen($message->fullmessage) - 1) . '.';
+                $admintext = get_string('notification_contact_admin', 'local_attendancewebhook', $a);
+            } else {
+                $text = get_string('notification_info', 'local_attendancewebhook', $a);
+                $admintext = '';
             }
-            $text = get_string('notification_contact_admin', 'local_attendancewebhook');
-            $message->fullmessage .= ' ' . $text;
-            $message->fullmessagehtml .= '<p>' . $text . '</p>';
+            
+            $message->fullmessage = "{$text}\n";
+            $message->fullmessagehtml = "<p>{$text}</p>";
+            if ($attendances) {
+                $message->fullmessage .= get_string('notification_messages', 'local_attendancewebhook') . "\n";
+                foreach ($attendances as &$attendance) {
+                    $attendancestr = strval($attendance);
+                    $message->fullmessage .= "{$attendancestr} \n";
+                    $message->fullmessagehtml .= "<p> {$attendancestr} </p>";
+                }
+                //$message->fullmessage = substr($message->fullmessage, 0, strlen($message->fullmessage) - 1);
+            }
+            
+            $message->fullmessage .= "{$admintext}\n";
+            $message->fullmessagehtml .= "<p>$admintext </p>";
             $message->fullmessageformat = FORMAT_HTML;
             $message->smallmessage = $message->fullmessage;
             $message->notification = 1;
@@ -519,18 +549,20 @@ class lib
      * @return bool|array True if success. Array of errors otherwise.
      */
     public static function process_register_attendance_with_proxys($event, $remotes) {
+        if (!$event) {
+            return false;
+        }
+        
+        $config = \local_attendancewebhook\lib::get_config();
+        if (!$config) {
+            return false;
+        }
+        $att_target = null;
+
         try {
-            if (!$event) {
-                return false;
-            }
-
-            $config = \local_attendancewebhook\lib::get_config();
-            if (!$config) {
-                return false;
-            }
-
             $errors = [];
-
+            $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
+            $att_target->errors = &$errors;
             // If Rest services are enabled, check topicId format.
             if ($config->restservices_enabled) {
                 global $DB, $CFG, $USER;
@@ -541,8 +573,7 @@ class lib
                 }
               
 
-                $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
-                $att_target->errors = &$errors;
+                
                 $prefix = $att_target->prefix;
                 // Get proxies.
 
@@ -594,7 +625,7 @@ class lib
 
         if (count($errors) > 0) {
             lib::log_error($errors);
-            \local_attendancewebhook\lib::notify_error($config, $event, $errors);
+            \local_attendancewebhook\lib::notify($config, $event, $att_target->getCourse()->id, \core\output\notification::NOTIFY_ERROR, $errors);
             // One error means that the attendance was not saved.
             return $errors;
         } else {
@@ -625,7 +656,7 @@ class lib
     //             $USER = $logtaker;
 
 
-    //             list($type, $prefix, $topicId) = \local_attendancewebhook\target_base::parse_topic_id($event->get_topic()->get_topic_id());
+    //             list($type, $prefix, $topicId) = \local_attendancewebhook\target_base::parse_topic_id($event->getTopic()->get_topic_id());
     //             if ($prefix == $config->restservices_prefix) {
     //                 // Local request.
     //                 $att_target = \local_attendancewebhook\target_base::get_target($event, $config);

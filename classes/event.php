@@ -37,7 +37,7 @@ class event {
         if (!is_object($object)) {
             throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
         }
-        $this->set_topic($object->topic);
+        $this->setTopic($object->topic);
         $this->set_opening_time(clean_param($object->openingTime, PARAM_NOTAGS));
         $this->set_closing_time(clean_param($object->closingTime, PARAM_NOTAGS));
         $this->set_event_note(clean_param($object->eventNote, PARAM_TEXT));
@@ -45,14 +45,14 @@ class event {
     }
 
     public function __toString() {
-        return date('d-m-Y H:i:s', $this->get_opening_time()) . ' - ' . strval($this->get_topic());
+        return strval($this->getTopic()) . '-' . date('d-m-Y H:i', $this->get_opening_time());
     }
 
-    public function get_topic() {
+    public function getTopic() {
         return $this->topic;
     }
 
-    public function set_topic($object) {
+    public function setTopic($object) {
         $this->topic = new topic($object);
     }
 
@@ -102,6 +102,6 @@ class event {
         return $this->source;
     }
     public function get_logtaker() {
-        return $this->get_topic()->get_member();
+        return $this->getTopic()->get_member();
     }
 }

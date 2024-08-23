@@ -17,5 +17,5 @@
 defined('MOODLE_INTERNAL') || die();
 
 $messageproviders = array(
-    'error' => array()
+    'notification' => array()
 );
