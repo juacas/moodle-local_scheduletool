@@ -33,6 +33,20 @@ if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
     // Better act as a service don't throw new moodle_exception('servicedonotexist', 'error').
 }
 
+// Get service from PATH_INFO.
+$path_info = $_SERVER['PATH_INFO'];
+// Split path_info.
+$path_info = explode('/', $path_info);
+$apikey = '';
+$service = '';
+
+// May the second element be the apikey.
+// First part is "/".
+if (count($path_info) == 3) {
+    $apikey= clean_param($path_info[1], PARAM_ALPHANUMEXT);
+    $service = clean_param($path_info[2], PARAM_ALPHANUMEXT);
+} else if (count($path_info) == 2) {
+    $service = clean_param($path_info[1], PARAM_ALPHANUMEXT);
     // Get the apikey from athorization header.   
     $headers = getallheaders();
     if (isset($headers['Authorization'])) {
@@ -42,6 +56,11 @@ if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
         local_attendancewebhook\lib::log_error('No apikey in headers:' . json_encode($headers));
         die();
     }
+} else {
+    header('HTTP/1.0 400 Bad Request');
+    die();
+}
+
 
 $PAGE->set_context(null);
 header('Content-Type: application/json;charset=UTF-8');
@@ -52,13 +71,11 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey')) {
     local_attendancewebhook\lib::log_error('Invalid apikey:' . $apikey);
     die();
 }
-// Get service from PATH_INFO.
-$path_info = $_SERVER['PATH_INFO'];
-switch ($path_info) {
-    case '/closeEvent':
+switch ($service) {
+    case 'closeEvent':
         $response = local_attendancewebhook\lib::process_add_session();
         break;
-    case '/signUp':
+    case 'signUp':
         $response = local_attendancewebhook\lib::process_save_attendance();
         break;
     default:
