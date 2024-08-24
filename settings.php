@@ -343,6 +343,15 @@ if ($hassiteconfig) {
         )
     );
     $settings->hide_if('local_attendancewebhook/restservices_signUp', 'local_attendancewebhook/restservices_enabled', 'notchecked');
-  
+    // Link to external page getlogs.php.
+    $apiparam = get_config('local_attendancewebhook', 'apikey');
+    $logurl = new \moodle_url('/local/attendancewebhook/getlogs.php', ['apikey' => $apiparam]);
+    $settings->add(
+        new admin_setting_description(
+            'local_attendancewebhook/getlogs',
+            "GetLogs",
+            "<a href=\"{$logurl->out()}\">GetLogs</a>",
+        )
+        );
 
 }
