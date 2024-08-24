@@ -37,12 +37,9 @@ if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
     $headers = getallheaders();
     if (isset($headers['Authorization'])) {
         $apikey = $headers['Authorization'];
-        // if (preg_match('/^Bearer\s+(.*)$/', $apikey, $matches)) {
-        //     $token = $matches[1];
-        // }
-    }
-    if (!$apikey) {
+    } else {
         header('HTTP/1.0 400 Bad Request');
+        local_attendancewebhook\lib::log_error('No apikey in headers:' . json_encode($headers));
         die();
     }
 
@@ -52,6 +49,7 @@ header('Content-Type: application/json;charset=UTF-8');
 // Check apikey and apiuser aginst config.
 if ($apikey != get_config('local_attendancewebhook', 'apikey')) {
     header('HTTP/1.0 401 Unauthorized');
+    local_attendancewebhook\lib::log_error('Invalid apikey:' . $apikey);
     die();
 }
 // Get service from PATH_INFO.
@@ -65,6 +63,7 @@ switch ($path_info) {
         break;
     default:
         header('HTTP/1.0 404 Not Found');
+        local_attendancewebhook\lib::log_error('Service not found:' . $path_info);
         die();
 }
 
