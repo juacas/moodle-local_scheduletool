@@ -625,8 +625,9 @@ class lib
         }
 
         if (count($errors) > 0) {
+            $courseid = $att_target ? $att_target->getCourse()->id??0: 0;
             lib::log_error($errors);
-            \local_attendancewebhook\lib::notify($config, $event, $att_target->getCourse()->id, \core\output\notification::NOTIFY_ERROR, $errors);
+            \local_attendancewebhook\lib::notify($config, $event, $courseid, \core\output\notification::NOTIFY_ERROR, $errors);
             // One error means that the attendance was not saved.
             return $errors;
         } else {
