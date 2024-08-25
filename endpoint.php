@@ -80,7 +80,7 @@ switch ($service) {
         break;
     default:
         header('HTTP/1.0 404 Not Found');
-        local_attendancewebhook\lib::log_error('Service not found:' . json_encode($path_info));
+        local_attendancewebhook\lib::log_error('Service not found:' . $path_info);
         die();
 }
 
