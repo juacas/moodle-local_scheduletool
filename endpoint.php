@@ -36,17 +36,17 @@ if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
 // Get service from PATH_INFO.
 $path_info = $_SERVER['PATH_INFO'];
 // Split path_info.
-$path_info = explode('/', $path_info);
+$path_parts = explode('/', $path_info);
 $apikey = '';
 $service = '';
 
 // May the second element be the apikey.
 // First part is "/".
-if (count($path_info) == 3) {
-    $apikey= clean_param($path_info[1], PARAM_ALPHANUMEXT);
-    $service = clean_param($path_info[2], PARAM_ALPHANUMEXT);
-} else if (count($path_info) == 2) {
-    $service = clean_param($path_info[1], PARAM_ALPHANUMEXT);
+if (count($path_parts) == 3) {
+    $apikey= clean_param($path_parts[1], PARAM_ALPHANUMEXT);
+    $service = clean_param($path_parts[2], PARAM_ALPHANUMEXT);
+} else if (count($path_parts) == 2) {
+    $service = clean_param($path_parts[1], PARAM_ALPHANUMEXT);
     // Get the apikey from athorization header.   
     $headers = getallheaders();
     if (isset($headers['Authorization'])) {

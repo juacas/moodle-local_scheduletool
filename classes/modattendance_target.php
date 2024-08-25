@@ -175,7 +175,7 @@ class modattendance_target extends target_base
                         'endDate' => date('Y-m-d', $session->sessdate + $session->duration),
                         'timetables' => [
                             [
-                             'weekday' => $days[date('N', $session->sessdate)], 
+                             'weekday' => $days[date('N', $session->sessdate)-1], 
                              'startTime' => date('H:i', $session->sessdate), 
                              'endTime' => date('H:i', $session->sessdate + $session->duration),
                              "info" => $info,

@@ -259,7 +259,7 @@ if ($hassiteconfig) {
     $settings->hide_if('local_attendancewebhook/enableincategories', 'local_attendancewebhook/restservices_enabled', 'notchecked');
 
     // Generate random API Key.
-    $exampleapikey = bin2hex(random_bytes(32));
+    $exampleapikey = bin2hex(random_bytes(16));
     // If REST services is enabled, show the following settings.
     // Apikey.
     $settings->add(

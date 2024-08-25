@@ -95,17 +95,19 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != ge
 $useridfield = get_config('local_attendancewebhook', 'user_id');
 $user = $DB->get_record('user', [$useridfield => $userid], '*');
 
-if (!$user) {
-    header('HTTP/1.0 404 Not Found');
-    die();
-}
+// if (!$user) {
+//     header('HTTP/1.0 404 Not Found');
+//     die();
+// }
 
 try {
-    $topics = lib::get_local_topics($user);
+    if ($user) {
+        $local_topics = lib::get_local_topics($user);
+    }
     // Get  proxyes topics.
     $remote_topics = lib::get_remote_topics($userid);
     // Fuse topics.
-    $topics = array_merge($topics, $remote_topics);
+    $topics = array_merge($local_topics, $remote_topics);
     
     $response = [ "topics" => $topics ];
     $response = json_encode($response, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
