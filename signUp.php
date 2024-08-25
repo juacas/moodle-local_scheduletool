@@ -37,6 +37,7 @@ try {
 
 } catch (moodle_exception $e) {
     header('HTTP/1.0 400 Bad Request');
+    local_attendancewebhook\lib::log_error("Bad query.");
     die();
 }
 
@@ -46,8 +47,14 @@ header('Content-Type: application/json;charset=UTF-8');
 // Check apikey and apiuser aginst config.
 if ($apikey != get_config('local_attendancewebhook', 'apikey')) {
     header('HTTP/1.0 401 Unauthorized');
+    local_attendancewebhook\lib::log_error("Bad apikey: $apikey.");
     die();
 }
 // Close_event is actually an add_session web service request.
 $response = local_attendancewebhook\lib::process_save_attendance();
-echo $response==1?'true':json_encode($response);
+if ($response==1) {
+    echo 'true';
+} else {
+    echo json_encode($response);
+    local_attendancewebhook\lib::log_error("Inusual response." . json_encode($response) );
+}

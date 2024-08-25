@@ -36,6 +36,7 @@ try {
     $apikey = required_param('apikey', PARAM_ALPHANUMEXT);
 } catch (moodle_exception $e) {
     header('HTTP/1.0 400 Bad Request');
+    local_attendancewebhook\lib::log_error("Bad apikey: $apikey.");
     die();
 }
 
@@ -49,4 +50,9 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey')) {
 }
 // CLose_event is actually an add_session web service request.
 $response = local_attendancewebhook\lib::process_add_session();
-echo $response === true?'true':json_encode($response);
+if ($response==1) {
+    echo 'true';
+} else {
+    echo json_encode($response);
+    local_attendancewebhook\lib::log_error("Inusual response." . json_encode($response) );
+}

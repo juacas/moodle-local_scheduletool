@@ -99,6 +99,8 @@ $user = $DB->get_record('user', [$useridfield => $userid], '*');
 //     header('HTTP/1.0 404 Not Found');
 //     die();
 // }
+$topics = [];
+$local_topics = [];
 
 try {
     if ($user) {
