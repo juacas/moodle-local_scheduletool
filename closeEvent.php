@@ -34,8 +34,6 @@ if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
 }
 try {
     $apikey = required_param('apikey', PARAM_ALPHANUMEXT);
-    $apiuser = required_param('apiuser', PARAM_ALPHANUMEXT);
-
 } catch (moodle_exception $e) {
     header('HTTP/1.0 400 Bad Request');
     die();
@@ -45,7 +43,7 @@ $PAGE->set_context(null);
 header('Content-Type: application/json;charset=UTF-8');
 
 // Check apikey and apiuser aginst config.
-if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != get_config('local_attendancewebhook', 'apiuser')) {
+if ($apikey != get_config('local_attendancewebhook', 'apikey')) {
     header('HTTP/1.0 401 Unauthorized');
     die();
 }
