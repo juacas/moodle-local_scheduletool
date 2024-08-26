@@ -39,7 +39,7 @@ class attendance_event
         }
         $this->set_topic($object->topic);
         $this->set_opening_time(clean_param($object->openingTime, PARAM_NOTAGS));
-        $this->set_closing_time(clean_param($object->closingTime, PARAM_NOTAGS));
+        $object->closingTime? $this->set_closing_time(clean_param($object->closingTime, PARAM_NOTAGS)) : null;
         $this->set_event_note(clean_param($object->eventNote, PARAM_TEXT));
         $this->set_member($object->member);
         $this->set_server_time($object->serverTime);
