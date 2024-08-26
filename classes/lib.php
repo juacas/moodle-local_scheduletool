@@ -561,23 +561,21 @@ class lib
 
         try {
             $errors = [];
-            $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
-            $att_target->errors = &$errors;
+           
             // If Rest services are enabled, check topicId format.
             if ($config->restservices_enabled) {
                 global $DB, $CFG, $USER;
 
-                $logtaker = \local_attendancewebhook\lib::get_user($config, $event->get_logtaker());
-                if (!$logtaker) {
-                    throw new \Exception('Unknown logtaker:' . $event->get_logtaker());
-                }
-              
-
-                
-                $prefix = $att_target->prefix;
+                list($type, $prefix) = \local_attendancewebhook\target_base::parse_topic_id($event->getTopic()->get_topic_id());
                 // Get proxies.
 
                 if ($prefix == $config->restservices_prefix) {
+                    $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
+                    $att_target->errors = &$errors;
+                    $logtaker = \local_attendancewebhook\lib::get_user($config, $event->get_logtaker());
+                    if (!$logtaker) {
+                        throw new \Exception('Unknown logtaker:' . $event->get_logtaker());
+                    }
                     // Impersonates the logtaker user.
                     $USER = $logtaker;
                     force_current_language($logtaker->lang);
