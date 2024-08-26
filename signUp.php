@@ -35,15 +35,11 @@ if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
 try {
     $apikey = required_param('apikey', PARAM_ALPHANUMEXT);
 
-} catch (moodle_exception $e) {
-    header('HTTP/1.0 400 Bad Request');
-    local_attendancewebhook\lib::log_error("Bad query.");
-    die();
-}
+
 
 $PAGE->set_context(null);
 header('Content-Type: application/json;charset=UTF-8');
-\local_attendancewebhook\lib::log_info("Signup Request.");
+\local_attendancewebhook\lib::log_info("Signup Request. ===============================");
 // Check apikey and apiuser aginst config.
 if ($apikey != get_config('local_attendancewebhook', 'apikey')) {
     header('HTTP/1.0 401 Unauthorized');
@@ -57,4 +53,9 @@ if ($response==1) {
 } else {
     echo json_encode($response);
     local_attendancewebhook\lib::log_error("Inusual response." . json_encode($response) );
+}
+} catch (\Exception $e) {
+    header('HTTP/1.0 400 Bad Request');
+    local_attendancewebhook\lib::log_error($e->getMessage());
+    die();
 }
