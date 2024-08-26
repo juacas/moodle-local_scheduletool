@@ -148,6 +148,6 @@ class attendance_event
         return $this->source;
     }
     public function get_logtaker() {
-        return $this->get_member();
+        return $this->getTopic()->get_member();
     }
 }
