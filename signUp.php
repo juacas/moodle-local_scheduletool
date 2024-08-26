@@ -43,7 +43,7 @@ try {
 
 $PAGE->set_context(null);
 header('Content-Type: application/json;charset=UTF-8');
-
+\local_attendancewebhook\lib::log_info("Signup Request.");
 // Check apikey and apiuser aginst config.
 if ($apikey != get_config('local_attendancewebhook', 'apikey')) {
     header('HTTP/1.0 401 Unauthorized');

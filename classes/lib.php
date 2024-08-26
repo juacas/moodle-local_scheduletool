@@ -576,6 +576,7 @@ class lib
                     if (!$logtaker) {
                         throw new \Exception('Unknown logtaker:' . $event->get_logtaker());
                     }
+                    lib::log_info("Logtaker: {$logtaker->username}");
                     // Impersonates the logtaker user.
                     $USER = $logtaker;
                     force_current_language($logtaker->lang);
@@ -583,6 +584,7 @@ class lib
                     $att_target->register_attendances();
                 } else if (isset($remotes[$prefix])) {
                     $request_url = $remotes[$prefix];
+                    lib::log_info("Forwarding request to: $request_url");
                     // Make a request to the endpoint with curl.
                     $curl = curl_init();
                     curl_setopt($curl, CURLOPT_URL, $request_url);
@@ -606,7 +608,7 @@ class lib
                         $errors[] = 'Unauthorized access to ' . $request_url;
                     }
                     if ($response === false) {
-                        $errors[] = 'Error getting topics from ' . $request_url . ': ' . curl_error($curl);
+                        $errors[] = 'Error connection proxy ' . $request_url . ': ' . curl_error($curl);
                     }
                     if ($response != 'true') {
                         $errors[] = 'Error processing request to ' . $request_url . ': ' . $response;
@@ -614,8 +616,6 @@ class lib
                 } else {
                     $errors[] = 'Invalid prefix: ' . $prefix;
                 }
-
-                
             }
 
         } catch (\Exception $e) {

@@ -42,6 +42,7 @@ try {
 
 $PAGE->set_context(null);
 header('Content-Type: application/json;charset=UTF-8');
+\local_attendancewebhook\lib::log_info("CloseEvent Request.");
 
 // Check apikey and apiuser aginst config.
 if ($apikey != get_config('local_attendancewebhook', 'apikey')) {
