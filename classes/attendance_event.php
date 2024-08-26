@@ -135,7 +135,7 @@ class attendance_event
     public function get_attendances()
     {
         $attendanceobj =(object)[
-            'member' => $this->getTopic()->get_member(),
+            'member' => $this->get_member(),
             'mode' => $this->get_mode(),
             'attendanceNote' => $this->get_attendance_note(),
             'serverTime' => date('c', $this->get_server_time()),
