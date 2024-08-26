@@ -1,6 +1,6 @@
 <?php
 require_once(__DIR__ . '/../../config.php');
-if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
+if (!get_config('local_attendancewebhook', 'restservices_enabled') || !get_config('local_attendancewebhook', 'logs_enabled')) {
     header('HTTP/1.1 405 Method Not Allowed');
     die();
     // Better act as a service don't throw new moodle_exception('servicedonotexist', 'error').

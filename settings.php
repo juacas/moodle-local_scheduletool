@@ -112,17 +112,17 @@ if ($hassiteconfig) {
         $settings->hide_if('local_attendancewebhook/module_section', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
         $settings->hide_if('local_attendancewebhook/module_section', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
 
-        $settings->add(
-            new admin_setting_configselect(
-                'local_attendancewebhook/course_id',
-                new lang_string('course_id_name', 'local_attendancewebhook'),
-                new lang_string('course_id_description', 'local_attendancewebhook'),
-                'shortname',
-                array('shortname' => 'shortname', 'idnumber' => 'idnumber')
-            )
-        );
-        $settings->hide_if('local_attendancewebhook/course_id', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
-        $settings->hide_if('local_attendancewebhook/course_id', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
+        // $settings->add(
+        //     new admin_setting_configselect(
+        //         'local_attendancewebhook/course_id',
+        //         new lang_string('course_id_name', 'local_attendancewebhook'),
+        //         new lang_string('course_id_description', 'local_attendancewebhook'),
+        //         'shortname',
+        //         array('shortname' => 'shortname', 'idnumber' => 'idnumber')
+        //     )
+        // );
+        // $settings->hide_if('local_attendancewebhook/course_id', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
+        // $settings->hide_if('local_attendancewebhook/course_id', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
         // Temporary users.
         $settings->add(
             new admin_setting_configcheckbox(
@@ -343,15 +343,17 @@ if ($hassiteconfig) {
         )
     );
     $settings->hide_if('local_attendancewebhook/restservices_signUp', 'local_attendancewebhook/restservices_enabled', 'notchecked');
+
     // Link to external page getlogs.php.
     $apiparam = get_config('local_attendancewebhook', 'apikey');
     $logurl = new \moodle_url('/local/attendancewebhook/getlogs.php', ['apikey' => $apiparam]);
+    // Checkbox for enabling the logs.
     $settings->add(
-        new admin_setting_description(
-            'local_attendancewebhook/getlogs',
-            "GetLogs",
-            "<a href=\"{$logurl->out()}\">GetLogs</a>",
+        new admin_setting_configcheckbox(
+            'local_attendancewebhook/logs_enabled',
+            new lang_string('logs_enabled_name', 'local_attendancewebhook'),
+            new lang_string('logs_enabled_description', 'local_attendancewebhook', $logurl->out()),
+            0
         )
-        );
-
+    );
 }

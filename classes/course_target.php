@@ -140,6 +140,7 @@ class course_target extends modattendance_target
             // Get cm_info.
             $cminfo = get_fast_modinfo($this->course);
             $cm = $cminfo->get_instances_of('attendance')[$cmodule->id];
+            lib::log_info("New attendance activity created in course {$this->course->shortname} with id={$cm->id}.");
             // Notify the module creation.
             lib::notify($this->config, $this->event, $this->course->id, \core\output\notification::NOTIFY_INFO,
                 get_string("notifications_new_activity", "local_attendancewebhook", 

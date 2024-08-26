@@ -208,6 +208,9 @@ class lib
     private static function log($message, $type)
     {
         global $CFG;
+        if (get_config('local_attendancewebhook', 'logs_enabled') == false) {
+            return;
+        }
         $dir = $CFG->dataroot . DIRECTORY_SEPARATOR . self::CM_IDNUMBER . DIRECTORY_SEPARATOR . 'logs';
         if (!file_exists($dir) && !mkdir($dir, 0777, true)) {
             return;
