@@ -39,7 +39,7 @@ $path_info = $_SERVER['PATH_INFO'];
 $path_parts = explode('/', $path_info);
 $apikey = '';
 $service = '';
-
+local_attendancewebhook\lib::log_info('Request ENDPOINT:' . $path_info . "================================");
 // May the second element be the apikey.
 // First part is "/".
 if (count($path_parts) == 3) {

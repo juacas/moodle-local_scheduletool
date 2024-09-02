@@ -33,8 +33,14 @@ if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
     // Better act as a service don't throw new moodle_exception('servicedonotexist', 'error').
 }
 try {
-    $apikey = required_param('apikey', PARAM_ALPHANUMEXT);
-
+    $apikey = optional_param('apikey', null, PARAM_ALPHANUMEXT);
+    if (empty($apikey)) {
+        // Get the apikey from athorization header.   
+        $headers = getallheaders();
+        if (isset($headers['Authorization'])) {
+            $apikey = $headers['Authorization'];
+        }
+    }
     $PAGE->set_context(null);
     header('Content-Type: application/json;charset=UTF-8');
     \local_attendancewebhook\lib::log_info("CloseEvent Request.===============================");
