@@ -267,7 +267,13 @@ if ($hassiteconfig) {
             get_string('restservices_enableincategories_description', 'local_attendancewebhook'))
     );
     $settings->hide_if('local_attendancewebhook/enableincategories', 'local_attendancewebhook/restservices_enabled', 'notchecked');
-
+    // Disabled in these course categories.
+    $settings->add(
+        new admin_settings_coursecat_multiselect(
+            'local_attendancewebhook/disableincategories',
+            get_string('restservices_disableincategories', 'local_attendancewebhook'),
+            get_string('restservices_disableincategories_description', 'local_attendancewebhook'))
+    );
     // Generate random API Key.
     $exampleapikey = bin2hex(random_bytes(16));
     // If REST services is enabled, show the following settings.

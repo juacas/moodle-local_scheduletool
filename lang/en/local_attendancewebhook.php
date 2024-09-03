@@ -66,7 +66,8 @@ $string['restservices_useronbehalf'] = 'User on behalf';
 $string['restservices_useronbehalf_description'] = 'User with global "mod/attendance:addinstance" permission on behalf of which the request is made. If an event is created from a course a new instance of mod_attendance is created.';
 $string['restservices_enableincategories'] = 'Enable only in this categories';
 $string['restservices_enableincategories_description'] = 'Enable the plugin only in these course categories (and its subcategories). All categories if empty.';
-
+$string['restservices_disableincategories'] = 'Disable in these categories';
+$string['restservices_disableincategories_description'] = 'Disable the plugin in these course categories (and its subcategories).';
 $string['skip_redirected_courses_name'] = 'Skip redirected courses';
 $string['skip_redirected_courses_description'] = 'Courses with course_format: redirected (See <a href="https://moodle.org/plugins/format_redirected">https://moodle.org/plugins/format_redirected</a>) will not be processed.';
 

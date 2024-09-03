@@ -61,6 +61,8 @@ $string['restservices_useronbehalf'] = 'Ejecutar en nombre de:';
 $string['restservices_useronbehalf_description'] = 'Ejecutar los servicios REST en nombre del usuario seleccionado. Debe tener el permiso global "mod/attendance:addinstance" para crear una instancia de mod_attendance para los eventos de curso';
 $string['restservices_enableincategories'] = 'Habilitar solo en las siguientes categorías';
 $string['restservices_enableincategories_description'] = 'Habilitar los servicios REST solo para los cursos en las categorías seleccionadas y sus subcategorías. Todos los cursos si se deja vacío.';
+$string['restservices_disableincategories'] = 'Deshabilitar en las siguientes categorías';
+$string['restservices_disableincategories_description'] = 'Deshabilitar los servicios REST para los cursos en las categorías seleccionadas y sus subcategorías. Ningún curso si se deja vacío.';
 
 $string['skip_redirected_courses_name'] = 'Saltar cursos redirigidos';
 $string['skip_redirected_courses_description'] = 'No se procesarán los cursos con el course_format: redirected (Ver <a href="https://moodle.org/plugins/format_redirected">https://moodle.org/plugins/format_redirected</a>)';
