@@ -206,12 +206,30 @@ class course_target extends modattendance_target
             // Get course data.
             $course = lib::is_course_allowed($course->id);
             if ($course) {
+                // Check start and end dates.
+                $now = time();
+                if ( ($course->startdate && ((int)$course->startdate) > $now) || 
+                     ($course->enddate && ((int)$course->enddate) < $now) ) {
+                    continue;
+                }
                 $topics[] = (object) [
                     'topicId' => $prefix . '-course-' . $course->id,
                     'name' => $course->shortname,
                     'info' => $course->fullname,
                     'externalIntegration' => true,
                     'tag' => 'course',
+                    'calendar' => [// format: 2021-09-01
+                        'startDate' => $course->startdate ? date('Y-m-d', $course->startdate) : date('Y-m-d'),
+                        'endDate' => $course->enddate ? date('Y-m-d', $course->enddate) : null,
+                        'timetables' => [
+                            [
+                             'weekday' => "LMXJV", // TODO: Get actual schedules.
+                             'startTime' => "08:00", 
+                             'endTime' => "21:00",
+                             "info" => $course->fullname,
+                            ]
+                        ]
+                    ],
                 ];
             }
         }
