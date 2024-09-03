@@ -64,6 +64,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 namespace local_attendancewebhook;
+use local_attendancewebhook_external;
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir.'/filelib.php');
 /** @var \moodle_database $DB */
@@ -85,7 +86,7 @@ try {
 
 $PAGE->set_context(null);
 header('Content-Type: application/json;charset=UTF-8');
-
+lib::log_info('Request getTopics:' . 'User: ' . $userid . ' Apikey: ' . $apikey . ' Apiuser: ' . $apiuser. '===========================');
 // Check apikey and apiuser aginst config.
 if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != get_config('local_attendancewebhook', 'apiuser')) {
     header('HTTP/1.0 401 Unauthorized');
@@ -113,7 +114,7 @@ try {
     
     $response = [ "topics" => $topics ];
     $response = json_encode($response, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
-    
+    lib::log_info('Response getTopics: ' . $response);    
     echo $response;
 } catch (\Exception $e) {
     header('HTTP/1.0 500 Internal Server Error: ' . $e->getMessage());
