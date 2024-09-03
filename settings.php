@@ -69,6 +69,16 @@ if ($hassiteconfig) {
             )
         );
         $settings->hide_if('local_attendancewebhook/export_courses_as_topics', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
+        // Skip redirected courses: checkbox.
+        $settings->add(
+            new admin_setting_configcheckbox(
+                'local_attendancewebhook/skip_redirected_courses',
+                new lang_string('skip_redirected_courses_name', 'local_attendancewebhook'),
+                new lang_string('skip_redirected_courses_description', 'local_attendancewebhook'),
+                1
+            )
+        );
+        $settings->hide_if('local_attendancewebhook/skip_redirected_courses', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
         // Setting for creating a new instance for course topics.
         $settings->add(
             new admin_setting_configtext(
@@ -82,7 +92,7 @@ if ($hassiteconfig) {
         );
         $settings->hide_if('local_attendancewebhook/module_name', 'local_attendancewebhook/modattendance_enabled', 'notchecked');
         $settings->hide_if('local_attendancewebhook/module_name', 'local_attendancewebhook/export_courses_as_topics', 'notchecked');
- 
+        
         // User for creating instances with rest services.
         // Select an user to execute services on behalf of.
         // $settings->add(

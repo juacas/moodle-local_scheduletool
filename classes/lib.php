@@ -742,8 +742,13 @@ class lib
     public static function is_course_allowed($courseid)
     {
         global $DB;
-        $categories = \local_attendancewebhook\lib::get_allowed_categories();
         $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+        // Check if this course is metalinked.
+        if (get_config('local_attendancewebhook', 'skip_redirected_courses') && $course->format == 'redirected') {
+            return false;
+        }
+        
+        $categories = \local_attendancewebhook\lib::get_allowed_categories();
         if ($course && ($categories === True || in_array($course->category, $categories))) {
             return $course;
         } else {

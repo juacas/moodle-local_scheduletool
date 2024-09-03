@@ -62,6 +62,8 @@ $string['restservices_useronbehalf_description'] = 'Ejecutar los servicios REST 
 $string['restservices_enableincategories'] = 'Habilitar solo en las siguientes categorías';
 $string['restservices_enableincategories_description'] = 'Habilitar los servicios REST solo para los cursos en las categorías seleccionadas y sus subcategorías. Todos los cursos si se deja vacío.';
 
+$string['skip_redirected_courses_name'] = 'Saltar cursos redirigidos';
+$string['skip_redirected_courses_description'] = 'No se procesarán los cursos con el course_format: redirected (Ver <a href="https://moodle.org/plugins/format_redirected">https://moodle.org/plugins/format_redirected</a>)';
 $string['export_sessions_as_topics_name'] = 'Exportar sesiones como temas';
 $string['export_sessions_as_topics_description'] = 'Las próximas sesiones de asistencia en cualquier instancia de mod_attendance se exportará como un tema';
 $string['export_courses_as_topics_name'] = 'Exportar cursos como temas';
