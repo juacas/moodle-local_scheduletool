@@ -774,7 +774,7 @@ class lib
         }
         // Get allowed categories.
         $categories = \local_attendancewebhook\lib::get_allowed_categories();
-        if ( count($nocategories) > 0  || in_array($course->category, $categories)) {
+        if ( count($categories) > 0  || in_array($course->category, $categories)) {
             return $course;
         } else {
             return false;
