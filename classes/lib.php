@@ -721,12 +721,12 @@ class lib
         $categories = get_config('local_attendancewebhook', 'enableincategories');
         if (!empty($categories)) {
             $categories = explode(',', $categories);
-            $categories = array_map('intval', $categories);
+            // $categories = array_map('intval', $categories);
             $subcats = [];
             foreach ($categories as $category) {
                 $cat = \core_course_category::get($category);
-                $children = $cat->get_children(); // Its cached so no problem.
-                $subcats = array_merge($subcats, array_keys($children));
+                $children = $cat->get_all_children_ids(); // Its cached so no problem.
+                $subcats = array_merge($subcats, $children);
             }
             $categories = array_merge($categories, $subcats);
             return $categories;
