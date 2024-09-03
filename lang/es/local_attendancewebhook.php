@@ -63,9 +63,13 @@ $string['restservices_enableincategories'] = 'Habilitar solo en las siguientes c
 $string['restservices_enableincategories_description'] = 'Habilitar los servicios REST solo para los cursos en las categorías seleccionadas y sus subcategorías. Todos los cursos si se deja vacío.';
 $string['restservices_disableincategories'] = 'Deshabilitar en las siguientes categorías';
 $string['restservices_disableincategories_description'] = 'Deshabilitar los servicios REST para los cursos en las categorías seleccionadas y sus subcategorías. Ningún curso si se deja vacío.';
-
 $string['skip_redirected_courses_name'] = 'Saltar cursos redirigidos';
 $string['skip_redirected_courses_description'] = 'No se procesarán los cursos con el course_format: redirected (Ver <a href="https://moodle.org/plugins/format_redirected">https://moodle.org/plugins/format_redirected</a>)';
+$string['local_caches_ttl'] = 'Expiración de cachés locales';
+$string['local_caches_ttl_description'] = 'Habilitar o deshabilitar las cachés locales del plugin. Las cachés se utilizan para almacenar los datos de los Topics y calendarios de cursos locales por razones de rendimiento. ttl=0 significa sin caché.';
+$string['remote_caches_ttl'] = 'Expiración de cachés remotos';
+$string['remote_caches_ttl_description'] = 'Habilitar o deshabilitar las cachés remotas del plugin. Las cachés se utilizan para almacenar los datos de los Topics de sistemas remotos por razones de rendimiento. ttl=0 significa sin caché.';
+    
 $string['export_sessions_as_topics_name'] = 'Exportar sesiones como temas';
 $string['export_sessions_as_topics_description'] = 'Las próximas sesiones de asistencia en cualquier instancia de mod_attendance se exportará como un tema';
 $string['export_courses_as_topics_name'] = 'Exportar cursos como temas';

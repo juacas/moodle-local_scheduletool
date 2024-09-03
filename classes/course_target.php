@@ -142,16 +142,25 @@ class course_target extends modattendance_target
             $cm = $cminfo->get_instances_of('attendance')[$cmodule->id];
             lib::log_info("New attendance activity created in course {$this->course->shortname} with id={$cm->id}.");
             // Notify the module creation.
-            lib::notify($this->config, $this->event, $this->course->id, \core\output\notification::NOTIFY_INFO,
-                get_string("notifications_new_activity", "local_attendancewebhook", 
-                    ['activityname' => $this->config->module_name,
-                    'coursename' => $this->course->shortname,
-                    'courseid' => $this->course->id,
-                    'cmid' => $cm->id,
-                    'activityurl' => new \moodle_url('/mod/attendance/view.php', ['id' => $cm->id]),
-                    'courseurl' => new \moodle_url('/course/view.php', ['id' => $this->course->id])
-                ]));
-                
+            lib::notify(
+                $this->config,
+                $this->event,
+                $this->course->id,
+                \core\output\notification::NOTIFY_INFO,
+                get_string(
+                    "notifications_new_activity",
+                    "local_attendancewebhook",
+                    [
+                        'activityname' => $this->config->module_name,
+                        'coursename' => $this->course->shortname,
+                        'courseid' => $this->course->id,
+                        'cmid' => $cm->id,
+                        'activityurl' => new \moodle_url('/mod/attendance/view.php', ['id' => $cm->id]),
+                        'courseurl' => new \moodle_url('/course/view.php', ['id' => $this->course->id])
+                    ]
+                )
+            );
+
         } else {
             $cm = reset($cms);
         }
@@ -208,31 +217,59 @@ class course_target extends modattendance_target
             if ($course) {
                 // Check start and end dates.
                 $now = time();
-                if ( ($course->startdate && ((int)$course->startdate) > $now) || 
-                     ($course->enddate && ((int)$course->enddate) < $now) ) {
+                if (
+                    ($course->startdate && ((int) $course->startdate) > $now) ||
+                    ($course->enddate && ((int) $course->enddate) < $now)
+                ) {
                     continue;
                 }
+                $calendar = self::get_course_calendar($course);
                 $topics[] = (object) [
                     'topicId' => $prefix . '-course-' . $course->id,
                     'name' => $course->shortname,
                     'info' => $course->fullname,
                     'externalIntegration' => true,
                     'tag' => 'course',
-                    'calendar' => [// format: 2021-09-01
-                        'startDate' => $course->startdate ? date('Y-m-d', $course->startdate) : date('Y-m-d'),
-                        'endDate' => $course->enddate ? date('Y-m-d', $course->enddate) : null,
-                        'timetables' => [
-                            [
-                             'weekday' => "LMXJV", // TODO: Get actual schedules.
-                             'startTime' => "08:00", 
-                             'endTime' => "21:00",
-                             "info" => $course->fullname,
-                            ]
-                        ]
-                    ],
+                    'calendar' => $calendar,
                 ];
             }
         }
         return $topics;
+    }
+    /**
+     * Get course calendar.
+     * @param object $course
+     * @return object calendar structure.
+     */
+    static public function get_course_calendar($course): object
+    {
+        $cache_ttl = get_config('local_attendancewebhook', 'local_caches_ttl');
+        // Use cache.
+        $cache = \cache::make('local_attendancewebhook', 'course_calendar');
+        $cachekey = 'course_calendar_' . $course->id;
+        $calendar_cache = $cache_ttl > 0 ? $cache->get($cachekey) : false;
+
+        if ($cache_ttl > 0 && $calendar_cache && $calendar_cache->time > (time() - $cache_ttl)) {
+            return $calendar_cache->data;
+        } else {
+            // TODO: Get actual schedules.
+            $calendar = (object) [
+                'startDate' => $course->startdate ? date('Y-m-d', $course->startdate) : date('Y-m-d'),// format: 2021-09-01
+                'endDate' => $course->enddate ? date('Y-m-d', $course->enddate) : null, // format: 2021-09-01
+                'timetables' => [
+                    [
+                        'weekday' => "LMXJV",
+                        'startTime' => "08:00",
+                        'endTime' => "21:00",
+                        "info" => $course->fullname,
+                    ]
+                ]
+            ];
+            // Store in cache.
+            if ($cache_ttl > 0) {
+                $cache->set($cachekey, (object)["data" => $calendar, "time" => time()]);
+            }
+        }
+        return $calendar;
     }
 }

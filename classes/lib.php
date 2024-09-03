@@ -329,9 +329,18 @@ class lib
      */
     public static function get_local_topics($user)
     {
+        $cache_ttl = get_config('local_attendancewebhook', 'local_caches_ttl');
+        // Use cache.
+        $cache = \cache::make('local_attendancewebhook', 'user_topics');
+        $cachekey =  "user_topic_{$user->id}";
+        if ($cache_ttl > 0 && $cached_topic = $cache->get($cachekey)) {
+            // Check lifetime.
+            if ($cached_topic->time > (time() - $cache_ttl)) {
+                return $cached_topic->data;
+            }
+        }
+        // Cache miss or expired.
         $topics = [];
-        // Courses can't be topics without POD.
-        // TODO: Get Timetables from POD.
         if (get_config('local_attendancewebhook', 'export_courses_as_topics')) {
             $courses = course_target::get_topics($user);
             $topics = array_merge($topics, $courses);
@@ -344,6 +353,10 @@ class lib
             $mods = modhybridteaching_target::get_topics($user);
             $topics = array_merge($topics, $mods);
         }
+        // Store in cache.
+        if ($cache_ttl > 0) {
+            $cache->set($cachekey, (object) ['time' => time(), 'data' => $topics]);
+        }
         return $topics;
     }
     /**
@@ -351,6 +364,16 @@ class lib
      */
     public static function get_remote_topics($userid)
     {
+        // Use remote topics cache.
+        $cache_ttl = get_config('local_attendancewebhook', 'remote_caches_ttl');
+        $cache = \cache::make('local_attendancewebhook', 'user_topics');
+        $cachekey =  "remote_user_topic_{$userid}";
+        if ($cache_ttl > 0 && $cached_topic = $cache->get($cachekey)) {
+            // Check lifetime. 1800 seconds for remote topics.
+            if ($cached_topic->time > (time() - $cache_ttl)) {
+                return $cached_topic->data;
+            }
+        }
         $topics = [];
         $remotes = lib::get_remotes('restservices_getTopics');
 
@@ -385,6 +408,10 @@ class lib
                     continue;
                 }
                 $topics = array_merge($topics, $responsejson->topics);
+                // Store in cache.
+                if ($cache_ttl > 0) {
+                    $cache->set($cachekey, (object) ['time' => time(), 'data' => $topics]);
+                }
             } catch (\Exception $e) {
                 lib::log_error('Error getting topics from ' . $request_url . ': ' . $e->getMessage());
             } catch (\Throwable $e) {

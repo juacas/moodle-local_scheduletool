@@ -70,7 +70,10 @@ $string['restservices_disableincategories'] = 'Disable in these categories';
 $string['restservices_disableincategories_description'] = 'Disable the plugin in these course categories (and its subcategories).';
 $string['skip_redirected_courses_name'] = 'Skip redirected courses';
 $string['skip_redirected_courses_description'] = 'Courses with course_format: redirected (See <a href="https://moodle.org/plugins/format_redirected">https://moodle.org/plugins/format_redirected</a>) will not be processed.';
-
+$string['local_caches_ttl'] = 'TTL local cache';
+$string['local_caches_ttl_description'] = 'Enable or disable plugin\'s local caches. Caches are used to store local user_topics and course_calendar data for performance reasons. ttl=0 means no cache.';
+$string['remote_caches_ttl'] = 'TTL proxys cache';
+$string['remote_caches_ttl_description'] = 'Enable or disable plugin\'s remotes caches. Caches are used to store remotes user_topics data for performance reasons. ttl=0 means no cache.';
 $string['modattendance_heading'] = 'mod_attendance integration';
 $string['modattendance_description'] = 'mod_attendance plugin can be used to manage attendance in Moodle. This plugin can be integrated with Datio\'s Asistencia';
 $string['modattendance_enabled_name'] = 'Enable mod_attendance integration';

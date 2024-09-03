@@ -363,6 +363,7 @@ if ($hassiteconfig) {
     // Link to external page getlogs.php.
     $apiparam = get_config('local_attendancewebhook', 'apikey');
     $logurl = new \moodle_url('/local/attendancewebhook/getlogs.php', ['apikey' => $apiparam]);
+   
     // Checkbox for enabling the logs.
     $settings->add(
         new admin_setting_configcheckbox(
@@ -370,6 +371,29 @@ if ($hassiteconfig) {
             new lang_string('logs_enabled_name', 'local_attendancewebhook'),
             new lang_string('logs_enabled_description', 'local_attendancewebhook', $logurl->out()),
             0
+        )
+    );
+   
+    // Enable caches.
+    $settings->add(
+        new admin_setting_configtext(
+            'local_attendancewebhook/local_caches_ttl',
+            new lang_string('local_caches_ttl', 'local_attendancewebhook'),
+            new lang_string('local_caches_ttl_description', 'local_attendancewebhook'),
+            600,
+            PARAM_INT,
+            10
+        )
+    );
+     // Enable caches.
+     $settings->add(
+        new admin_setting_configtext(
+            'local_attendancewebhook/remote_caches_ttl',
+            new lang_string('remote_caches_ttl', 'local_attendancewebhook'),
+            new lang_string('remote_caches_ttl_description', 'local_attendancewebhook'),
+            1800,
+            PARAM_INT,
+            10
         )
     );
 }
