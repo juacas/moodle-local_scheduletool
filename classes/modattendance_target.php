@@ -145,6 +145,10 @@ class modattendance_target extends target_base
         $coursesid = array_map(function ($course) {
             return $course->id;
         }, $courses);
+        // Filter allowed courses.
+        $coursesid = array_filter($coursesid, function ($courseid) {
+            return lib::is_course_allowed($courseid);
+        });
         $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
         $attendances = $DB->get_records_list('attendance', 'course', $coursesid);
         foreach ($attendances as $attendance) {
