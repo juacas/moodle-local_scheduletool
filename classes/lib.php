@@ -769,12 +769,12 @@ class lib
         }
         // Get disallowed categories.
         $nocategories =  \local_attendancewebhook\lib::get_disallowed_categories();
-        if ( count($nocategories) > 0 || in_array($course->category, $nocategories)) {
+        if ( count($nocategories) > 0 && in_array($course->category, $nocategories)) {
             return false;
         }
         // Get allowed categories.
         $categories = \local_attendancewebhook\lib::get_allowed_categories();
-        if ( count($categories) > 0  || in_array($course->category, $categories)) {
+        if ( count($categories) > 0  && in_array($course->category, $categories)) {
             return $course;
         } else {
             return false;
