@@ -213,7 +213,7 @@ class course_target extends modattendance_target
 
         foreach ($courses as $course) {
             // Get course data.
-            $course = lib::is_course_allowed($course->id);
+            $course = lib::get_course_if_allowed($course->id);
             if ($course) {
                 // Check start and end dates.
                 $now = time();

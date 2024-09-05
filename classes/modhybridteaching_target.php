@@ -148,13 +148,13 @@ class modhybridteaching_target extends target_base
         }, $courses);
         // Filter allowed courses.
         $coursesid = array_filter($coursesid, function ($courseid) {
-            return lib::is_course_allowed($courseid);
+            return lib::get_course_if_allowed($courseid);
         });
         $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
         $hybridteachings = $DB->get_records_list('hybridteaching', 'course', $coursesid);
         foreach ($hybridteachings as $hybridteaching) {
             $cm = get_coursemodule_from_instance('hybridteaching', $hybridteaching->id, 0, false, MUST_EXIST);
-            $course = lib::is_course_allowed($cm->course);
+            $course = lib::get_course_if_allowed($cm->course);
             if (!$course) {
                 continue;
             }

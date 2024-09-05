@@ -469,7 +469,7 @@ class lib
         $attendancecourses = get_user_capability_course('mod/attendance:takeattendances', $user->id);
         if ($attendancecourses) {
             $attendancecourses = array_filter($attendancecourses, function ($course) {
-                return lib::is_course_allowed($course->id);
+                return lib::get_course_if_allowed($course->id);
             });
             if (count($attendancecourses) > 0) {
                 $user->rol = 'ORGANISER';
@@ -739,22 +739,33 @@ class lib
     //         return true;
     //     }
     // }
+    // Static cache.
+    static $allowed_categories = null;
     /**
      * Get allowed course categories.
      * @return array|bool of allowed category ids. True if all categories are allowed.
      */
     public static function get_allowed_categories()
     {
-        $categories = get_config('local_attendancewebhook', 'enableincategories');
-        return lib::get_fulltree_categories($categories);
+        if (self::$allowed_categories === null) {
+            $categories = get_config('local_attendancewebhook', 'enableincategories');
+            self::$allowed_categories = lib::get_fulltree_categories($categories);
+        }
+        return self::$allowed_categories;
     }
+    // Local cache.
+    static $disallowed_categories = null;
     /**
      * Get disallowed course categories.
      * @return bool|array of disallowed category ids. True if all categories are allowed.
      */
     public static function get_disallowed_categories() {
-        $categories = get_config('local_attendancewebhook', 'disableincategories');
-        return lib::get_fulltree_categories($categories);
+
+        if (self::$disallowed_categories === null) {
+            $categories = get_config('local_attendancewebhook', 'disableincategories');
+            self::$disallowed_categories = lib::get_fulltree_categories($categories);
+        } 
+        return self::$disallowed_categories;
     }
     /**
      * Get full tree of ids of categories from the input set of categories.
@@ -768,7 +779,11 @@ class lib
             // $categories = array_map('intval', $categories);
             $subcats = [];
             foreach ($categories as $category) {
-                $cat = \core_course_category::get($category);
+                $cat = \core_course_category::get($category, IGNORE_MISSING);
+                if (!$cat) {
+                    lib::log_error('Category not found: ' . $category);
+                    continue;
+                }
                 $children = $cat->get_all_children_ids(); // Its cached so no problem.
                 $subcats = array_merge($subcats, $children);
             }
@@ -783,7 +798,7 @@ class lib
      * @param $courseid int Course id.
      * @return \stdClass|bool Course object if allowed. False otherwise.
      */
-    public static function is_course_allowed($courseid)
+    public static function get_course_if_allowed($courseid)
     {
         global $DB;
         $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
@@ -795,8 +810,8 @@ class lib
             return false;
         }
         // Get disallowed categories.
-        $nocategories =  \local_attendancewebhook\lib::get_disallowed_categories();
-        if ( count($nocategories) > 0 && in_array($course->category, $nocategories)) {
+        $disalloedcategories =  \local_attendancewebhook\lib::get_disallowed_categories();
+        if ( count($disalloedcategories) > 0 && in_array($course->category, $disalloedcategories)) {
             return false;
         }
         // Get allowed categories.
