@@ -248,7 +248,8 @@ if ($hassiteconfig) {
             new lang_string('restservices_description', 'local_attendancewebhook')
         )
     );
-    // Enable REST services.
+    // Enable REST services
+    // TODO: honor get_config('core', 'webserviceprotocols') rest config.
     $settings->add(
         new admin_setting_configcheckbox(
             'local_attendancewebhook/restservices_enabled',

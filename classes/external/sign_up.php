@@ -14,54 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace local_attendancewebhook\external;
 
 defined('MOODLE_INTERNAL') || die;
+use \core_external\external_api;
+use \core_external\external_function_parameters;
+use \core_external\external_value;
+use \local_attendancewebhook\lib;
 
 require_once($CFG->dirroot . '/lib/externallib.php');
-
-class local_attendancewebhook_external extends external_api
+/**
+ * @deprecated Moved to plain REST php scripts.
+ */
+class sign_up extends external_api
 {
-
-    public static function add_session_parameters()
-    {
-        return new external_function_parameters(array());
-    }
-
-    public static function add_session()
-    {
-        $context = context_system::instance();
-        self::validate_context($context);
-        if (get_config('local_attendancewebhook', 'modattendance_enabled')) {
-
-            if (get_config('local_attendancewebhook', 'export_courses_as_topics')) {
-                require_capability('moodle/course:manageactivities', $context);
-                require_capability('mod/attendance:addinstance', $context);
-                require_capability('mod/attendance:changepreferences', $context);
-            }
-            require_capability('mod/attendance:manageattendances', $context);
-            require_capability('mod/attendance:takeattendances', $context);
-            require_capability('mod/attendance:changeattendances', $context);
-
-            if (get_config('local_attendancewebhook', 'tempusers_enabled')) {
-                require_capability('mod/attendance:managetemporaryusers', $context); // TODO: Check conditionally.
-                require_capability('moodle/user:create', $context);
-                require_capability('moodle/user:update', $context);
-            }
-        }
-        return local_attendancewebhook\lib::process_add_session();
-    }
-    public static function add_session_returns()
-    {
-        return new external_value(PARAM_BOOL);
-    }
-    public static function save_attendance_parameters()
+    public static function execute_parameters()
     {
         return new external_function_parameters([]);
     }
 
-    public static function save_attendance()
+    public static function execute()
     {
-        $context = context_system::instance();
+        $context = \context_system::instance();
         self::validate_context($context);
         if (get_config('local_attendancewebhook', 'mod_attendance_enabled')) {
 
@@ -80,9 +54,16 @@ class local_attendancewebhook_external extends external_api
                 require_capability('moodle/user:update', $context);
             }
         }
-        return local_attendancewebhook\lib::process_save_attendance();
+        return lib::process_save_attendance();
     }
-    public static function save_attendance_returns()
+     /**
+     * Mark the function as deprecated.
+     * @return bool
+     */
+    public static function execute_is_deprecated() {
+        return true;
+    }
+    public static function execute_return()
     {
         return new external_value(PARAM_BOOL);
     }

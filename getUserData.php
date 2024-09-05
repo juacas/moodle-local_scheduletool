@@ -21,10 +21,11 @@
  * @copyright  2024 University of Valladoild, Spain
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+namespace local_attendancewebhook;
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir.'/filelib.php');
-/** @var moodle_database $DB */
+/** @var \moodle_database $DB */
 global $DB;
 
 if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
@@ -36,7 +37,7 @@ try {
     $apikey = required_param('apikey', PARAM_ALPHANUMEXT);
     $apiuser = required_param('apiuser', PARAM_ALPHANUMEXT);
     $userid = required_param('userid', PARAM_ALPHANUMEXT);
-} catch (moodle_exception $e) {
+} catch (\moodle_exception $e) {
     header('HTTP/1.0 400 Bad Request');
     die();
 }
@@ -49,9 +50,10 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != ge
     header('HTTP/1.0 401 Unauthorized');
     die();
 }
+lib::log_info('Request getUserData:' . 'User: ' . $userid . ' Apikey: ' . $apikey . ' Apiuser: ' . $apiuser. '===========================');
 // Find userid.
-$user_data = local_attendancewebhook\lib::get_user_data($userid);
-$remote_user_data = local_attendancewebhook\lib::get_user_data_remote($userid);
+$user_data = lib::get_user_data($userid);
+$remote_user_data = lib::get_user_data_remote($userid);
 // User not found.
 if (!$user_data && count($remote_user_data) == 0) {
     header('HTTP/1.0 404 Not Found');
