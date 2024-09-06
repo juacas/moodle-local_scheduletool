@@ -74,7 +74,7 @@ class course_target extends modattendance_target
         global $DB;
         $params = ['attendanceid' => $this->cm->instance, 'sessdate' => $this->event->get_opening_time()];
         $sessions = $DB->get_records('attendance_sessions', $params);
-        $message = count($sessions) . ' attendance session(s) ' . json_encode($params) . ' found.';
+        $message = count($sessions) . ' attendance session(s) ' . json_encode($sessions) . ' found.';
         if (count($sessions) > 1) {
             $this->errors[] = $message;
             lib::log_error($message);
@@ -88,7 +88,7 @@ class course_target extends modattendance_target
             } else {
                 $session = new \stdClass();
                 $session->sessdate = $this->event->get_opening_time();
-                $session->duration = $this->event->get_closing_time() - $this->event->get_opening_time();
+                $session->duration = $this->event->get_closing_time() == null ? 0 : $this->event->get_closing_time() - $this->event->get_opening_time();
                 $session->groupid = 0;
                 $session->description = $this->event->get_event_note();
                 $session->descriptionitemid = -1;
@@ -140,7 +140,7 @@ class course_target extends modattendance_target
             // Get cm_info.
             $cminfo = get_fast_modinfo($this->course);
             $cm = $cminfo->get_instances_of('attendance')[$cmodule->id];
-            lib::log_info("New attendance activity created in course {$this->course->shortname} with id={$cm->id}.");
+            lib::log_info("New attendance activity created in course {$this->course->shortname} with: " . json_encode($cmodule));
             // Notify the module creation.
             lib::notify(
                 $this->config,
