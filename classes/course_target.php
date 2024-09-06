@@ -84,7 +84,7 @@ class course_target extends modattendance_target
             if (count($sessions) == 1) {
                 $session = reset($sessions);
                 $this->sessionid = $session->id;
-                lib::log_info('Attendance session updated.');
+                lib::log_info('Attendance session {$session->id} selected for update.');
             } else {
                 $session = new \stdClass();
                 $session->sessdate = $this->event->get_opening_time();
