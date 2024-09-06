@@ -170,7 +170,7 @@ class modattendance_target extends target_base
                 $days = ["L", "M", "X", "J", "V", "S", "D"];
                 $topics[] = (object)[
                     'topicId' => $prefix . '-attendance-' . $cm->id . '-' . $session->id,
-                    'name' => $course->shortname . ":" . $att->name . " " . $description,
+                    'name' => $att->name . " - " . $description,
                     'info' => $info,
                     'externalIntegration' => true,
                     'tag' => "{$course->shortname}/{$att->name}",

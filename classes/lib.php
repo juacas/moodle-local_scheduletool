@@ -217,7 +217,7 @@ class lib
         }
         $file = $dir . DIRECTORY_SEPARATOR . 'trace.log';
         $maxcount = 10;
-        $maxsize = 5000000; // 5MB en bytes.
+        $maxsize = 500000; // 5MB en bytes.
         if (file_exists($file) && filesize($file) >= $maxsize) {
             $oldest = $file . "." . $maxcount;
             if (file_exists($oldest)) {

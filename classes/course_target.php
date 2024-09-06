@@ -106,7 +106,7 @@ class course_target extends modattendance_target
                 $sessid = $this->att_struct->add_session($session);
                 $this->sessionid = $sessid;
 
-                lib::log_info('Attendance session created.');
+                lib::log_info('Attendance session created: ' . json_encode($session));
             }
         }
         return parent::get_session();
