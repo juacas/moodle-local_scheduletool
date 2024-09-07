@@ -88,7 +88,7 @@ class course_target extends modattendance_target
             } else {
                 $session = new \stdClass();
                 $session->sessdate = $this->event->get_opening_time();
-                $session->duration = $this->event->get_closing_time() == null ? 0 : $this->event->get_closing_time() - $this->event->get_opening_time();
+                $session->duration = $this->event->get_closing_time() == null ? 3600 : $this->event->get_closing_time() - $this->event->get_opening_time();
                 $session->groupid = 0;
                 $session->description = $this->event->get_event_note();
                 $session->descriptionitemid = -1;
