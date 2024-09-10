@@ -258,7 +258,7 @@ class course_target extends modattendance_target
                 'endDate' => $course->enddate ? date('Y-m-d', $course->enddate) : null, // format: 2021-09-01
                 'timetables' => [
                     [
-                        'weekdays' => "LMXJV",
+                        'weekday' => "L,M,X,J,V",
                         'startTime' => "08:00",
                         'endTime' => "21:00",
                         "info" => $course->fullname,
