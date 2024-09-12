@@ -153,6 +153,9 @@ class modattendance_target extends target_base
         $attendances = $DB->get_records_list('attendance', 'course', $coursesid);
         foreach ($attendances as $attendance) {
             $cm = get_coursemodule_from_instance('attendance', $attendance->id, 0, false, MUST_EXIST);
+            if ($cm->idnumber === lib::CM_IDNUMBER || $cm->deletioninprogress === 1) {
+                continue;
+            }
             $course = lib::get_course_if_allowed($cm->course);
             if (!$course) {
                 continue;
