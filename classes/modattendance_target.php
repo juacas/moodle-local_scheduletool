@@ -169,14 +169,14 @@ class modattendance_target extends target_base
             foreach ($sessions as $session) {
                 // Create info text from dates.
                 $description = content_to_text($session->description, FORMAT_MOODLE);
-                $info = "{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')';
+                $info = substr("{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')', 0, 100);
                 $days = ["L", "M", "X", "J", "V", "S", "D"];
                 $topics[] = (object)[
                     'topicId' => $prefix . '-attendance-' . $cm->id . '-' . $session->id,
                     'name' => $att->name . " - " . $description,
-                    'info' => substr($info, 0, 100),
+                    'info' => $info, // Max 100 chars.
                     'externalIntegration' => true,
-                    'tag' => substr("{$course->shortname}/{$att->name}",0, 100),
+                    'tag' => substr("{$course->shortname}/{$att->name}",0, 100), // Max 100 chars.
                     'calendar' => [// format: 2021-09-01
                         'startDate' => date('Y-m-d', $session->sessdate),
                         'endDate' => date('Y-m-d', $session->sessdate + $session->duration),
@@ -185,7 +185,7 @@ class modattendance_target extends target_base
                              'weekday' => $days[date('N', $session->sessdate)-1], 
                              'startTime' => date('H:i', $session->sessdate), 
                              'endTime' => date('H:i', $session->sessdate + $session->duration),
-                             "info" => $info,
+                             "info" => $info, // Max 100 chars.
                             ]
                         ]
                     ],

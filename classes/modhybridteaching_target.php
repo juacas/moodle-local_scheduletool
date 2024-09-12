@@ -179,9 +179,9 @@ class modhybridteaching_target extends target_base
                 $topics[] = (object) [
                     'topicId' => $prefix . '-hybridteaching-' . $cm->id . '-' . $session->id,
                     'name' => $course->shortname . ":" . $hybridteaching->name . " " . $description,
-                    'info' => substr($info, 0, 100),
+                    'info' => substr($info, 0, 100), // Max 100 characters.
                     'externalIntegration' => true,
-                    'tag' => substr("{$hybridteaching->name}", 0, 100),
+                    'tag' => substr("{$hybridteaching->name}", 0, 100), // Max 100 characters.
                 ];
             }
         }

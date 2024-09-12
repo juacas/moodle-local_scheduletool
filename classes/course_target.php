@@ -229,7 +229,7 @@ class course_target extends modattendance_target
                     'topicId' => $prefix . '-course-' . $course->id,
                     'name' => $course->shortname,
                     // Only 100 characters.
-                    'info' => substr($course->fullname, 0, 100),
+                    'info' => substr($course->fullname, 0, 100), // Max 100 chars.
                     'externalIntegration' => true,
                     'tag' => 'course',
                     'calendar' => $calendar,
