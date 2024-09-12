@@ -224,10 +224,12 @@ class course_target extends modattendance_target
                     continue;
                 }
                 $calendar = self::get_course_calendar($course);
+            
                 $topics[] = (object) [
                     'topicId' => $prefix . '-course-' . $course->id,
                     'name' => $course->shortname,
-                    'info' => $course->fullname,
+                    // Only 100 characters.
+                    'info' => substr($course->fullname, 0, 100),
                     'externalIntegration' => true,
                     'tag' => 'course',
                     'calendar' => $calendar,

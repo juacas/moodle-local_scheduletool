@@ -174,9 +174,9 @@ class modattendance_target extends target_base
                 $topics[] = (object)[
                     'topicId' => $prefix . '-attendance-' . $cm->id . '-' . $session->id,
                     'name' => $att->name . " - " . $description,
-                    'info' => $info,
+                    'info' => substr($info, 0, 100),
                     'externalIntegration' => true,
-                    'tag' => "{$course->shortname}/{$att->name}",
+                    'tag' => substr("{$course->shortname}/{$att->name}",0, 100),
                     'calendar' => [// format: 2021-09-01
                         'startDate' => date('Y-m-d', $session->sessdate),
                         'endDate' => date('Y-m-d', $session->sessdate + $session->duration),
