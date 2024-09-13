@@ -51,15 +51,15 @@ class course_target extends modattendance_target
     /**
      * Parse topicId to get cmid and courseid.
      * @param string $topicId
-     * @return array [type, prefix, courseid]
+     * @return array [type, prefix, courseid, sequence]
      */
     public static function parse_topic_id(string $topicId): array
     {
         $topicparts = explode('-', $topicId);
-        if (count($topicparts) != 3 || $topicparts[0] == '' || $topicparts[1] != 'course' || !is_numeric($topicparts[2])) {
+        if (count($topicparts) < 3 || count($topicparts) > 4 || $topicparts[0] == '' || $topicparts[1] != 'course' || !is_numeric($topicparts[2])) {
             throw new \Exception("Invalid course topicId format: {$topicId}");
         }
-        return ['course', $topicparts[0], $topicparts[2]];
+        return ['course', $topicparts[0], $topicparts[2], $topicparts[3] ?? null];
     }
     /**
      * Search a session with the same opening time. If not found, create a new one.
@@ -223,17 +223,20 @@ class course_target extends modattendance_target
                 ) {
                     continue;
                 }
-                $calendar = self::get_course_calendar($course);
-            
-                $topics[] = (object) [
-                    'topicId' => $prefix . '-course-' . $course->id,
-                    'name' => $course->shortname,
-                    // Only 100 characters.
-                    'info' => substr($course->fullname, 0, 100), // Max 100 chars.
-                    'externalIntegration' => true,
-                    'tag' => 'course',
-                    'calendar' => $calendar,
-                ];
+                // Course can have more than one timetable. Add a sequence number to the topicId.
+                $sequence = 0;
+                $calendars = self::get_course_calendars($course);
+                foreach ($calendars as $calendar) {
+                    $topics[] = (object) [
+                        'topicId' => $prefix . '-course-' . $course->id . '-' . $sequence++,
+                        'name' => $course->shortname,
+                        // Only 100 characters.
+                        'info' => substr($course->fullname, 0, 100), // Max 100 chars.
+                        'externalIntegration' => true,
+                        'tag' => 'course',
+                        'calendar' => $calendar,
+                    ];
+                }
             }
         }
         return $topics;
@@ -241,9 +244,9 @@ class course_target extends modattendance_target
     /**
      * Get course calendar.
      * @param object $course
-     * @return object calendar structure.
+     * @return array calendars structure.
      */
-    static public function get_course_calendar($course): object
+    static public function get_course_calendars($course): array
     {
         $cache_ttl = get_config('local_attendancewebhook', 'local_caches_ttl');
         // Use cache.
@@ -254,24 +257,27 @@ class course_target extends modattendance_target
         if ($cache_ttl > 0 && $calendar_cache && $calendar_cache->time > (time() - $cache_ttl)) {
             return $calendar_cache->data;
         } else {
-            // TODO: Get actual schedules.
-            $calendar = (object) [
-                'startDate' => $course->startdate ? date('Y-m-d', $course->startdate) : date('Y-m-d'),// format: 2021-09-01
-                'endDate' => $course->enddate ? date('Y-m-d', $course->enddate) : null, // format: 2021-09-01
-                'timetables' => [
-                    [
-                        'weekdays' => "L,M,X,J,V",
-                        'startTime' => "08:00",
-                        'endTime' => "21:00",
-                        "info" => $course->fullname,
+            // Calculate date ranges with same timetable.
+            // TODO: Get actual schedules. Each calendar only supports one date range.
+            $calendars = [
+                (object) [
+                    'startDate' => $course->startdate ? date('Y-m-d', $course->startdate) : date('Y-m-d'),// format: 2021-09-01
+                    'endDate' => $course->enddate ? date('Y-m-d', $course->enddate) : null, // format: 2021-09-01
+                    'timetables' => [
+                        [
+                            'weekdays' => "L,M,X,J,V",
+                            'startTime' => "08:00",
+                            'endTime' => "21:00",
+                            "info" => $course->fullname,
+                        ]
                     ]
                 ]
             ];
             // Store in cache.
             if ($cache_ttl > 0) {
-                $cache->set($cachekey, (object)["data" => $calendar, "time" => time()]);
+                $cache->set($cachekey, (object) ["data" => $calendars, "time" => time()]);
             }
         }
-        return $calendar;
+        return $calendars;
     }
 }
