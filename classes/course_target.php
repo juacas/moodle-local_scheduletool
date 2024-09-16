@@ -306,12 +306,17 @@ class course_target extends modattendance_target
         $restservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
         $apiKey = get_config('local_attendancewebhook', 'restservices_schedules_apikey');
         $dni = strtoupper(substr($user->username, 1)); // TODO get real DNI.
+        // Get this monday.
+        $monday = strtotime('monday this week');
+        // Format m/d/Y.
+        $day = date('m/d/Y', $monday);
+
         $body = json_encode([
             'apiKey' => $apiKey,
             "lan" => "es",
             "document" => $dni,
             "role" => "PROFESOR",
-            "year" => date('m/d/Y')
+            "year" => $day
         ]);
         // Make request with curl.
         $ch = curl_init($restservice);
@@ -323,8 +328,9 @@ class course_target extends modattendance_target
         ];
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $result = curl_exec($ch);
+        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        lib::log_info("Got schedule from $restservice with $body --> status $status: $result");
         curl_close($ch);
-
         self::$scheduleforuser[$user->id] = $result;
         return $result;
     }
