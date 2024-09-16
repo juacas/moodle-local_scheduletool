@@ -329,7 +329,8 @@ class course_target extends modattendance_target
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $result = curl_exec($ch);
         $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        lib::log_info("Got schedule from $restservice with $body --> status $status: $result");
+        $error = curl_error($ch);
+        lib::log_info("Got schedule from $restservice with $body --> status $status($error): $result");
         curl_close($ch);
         self::$scheduleforuser[$user->id] = $result;
         return $result;
