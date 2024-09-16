@@ -361,7 +361,30 @@ if ($hassiteconfig) {
     );
     $settings->hide_if('local_attendancewebhook/restservices_signUp', 'local_attendancewebhook/restservices_enabled', 'notchecked');
 
-    // Link to external page getlogs.php.
+    // URL rest service for schedules.
+    $settings->add(
+        new admin_setting_configtext(
+            'local_attendancewebhook/restservices_schedules_url',
+            new lang_string('restservices_schedules_name', 'local_attendancewebhook'),
+            new lang_string('restservices_schedules_description', 'local_attendancewebhook'),
+            '',
+            PARAM_URL,
+            256
+        )
+    );
+    // Apikey for schedules.
+    $settings->add(
+        new admin_setting_configtext(
+            'local_attendancewebhook/restservices_schedules_apikey',
+            new lang_string('restservices_schedules_apikey_name', 'local_attendancewebhook'),
+            new lang_string('restservices_schedules_apikey_description', 'local_attendancewebhook'),
+            '',
+            PARAM_TEXT,
+            64
+        )
+    );
+
+    // Link to page getlogs.php.
     $apiparam = get_config('local_attendancewebhook', 'apikey');
     $logurl = new \moodle_url('/local/attendancewebhook/getlogs.php', ['apikey' => $apiparam]);
    

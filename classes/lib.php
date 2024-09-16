@@ -805,7 +805,7 @@ class lib
         if ($course === false) {
             return false;
         }
-        // Check if this course is metalinked.
+        // Check if this course is redirected.
         if (get_config('local_attendancewebhook', 'skip_redirected_courses') && $course->format == 'redirected') {
             return false;
         }

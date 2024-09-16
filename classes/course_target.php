@@ -225,10 +225,11 @@ class course_target extends modattendance_target
                 }
                 // Course can have more than one timetable. Add a sequence number to the topicId.
                 $sequence = 0;
-                $calendars = self::get_course_calendars($course);
+                $calendars = self::get_course_calendars($course, $user);
                 foreach ($calendars as $calendar) {
+                    $sequence = hash('md5', json_encode($calendar));
                     $topics[] = (object) [
-                        'topicId' => $prefix . '-course-' . $course->id . '-' . $sequence++,
+                        'topicId' => $prefix . '-course-' . $course->id . '-' . $sequence,
                         'name' => $course->shortname,
                         // Only 100 characters.
                         'info' => substr($course->fullname, 0, 100), // Max 100 chars.
@@ -244,40 +245,127 @@ class course_target extends modattendance_target
     /**
      * Get course calendar.
      * @param object $course
+     * @param object $user
      * @return array calendars structure.
      */
-    static public function get_course_calendars($course): array
+    static public function get_course_calendars($course, $user = null): array
     {
         $cache_ttl = get_config('local_attendancewebhook', 'local_caches_ttl');
         // Use cache.
         $cache = \cache::make('local_attendancewebhook', 'course_calendar');
         $cachekey = 'course_calendar_' . $course->id;
         $calendar_cache = $cache_ttl > 0 ? $cache->get($cachekey) : false;
+        $calendars = [];
 
         if ($cache_ttl > 0 && $calendar_cache && $calendar_cache->time > (time() - $cache_ttl)) {
             return $calendar_cache->data;
         } else {
-            // Calculate date ranges with same timetable.
-            // TODO: Get actual schedules. Each calendar only supports one date range.
-            $calendars = [
-                (object) [
-                    'startDate' => $course->startdate ? date('Y-m-d', $course->startdate) : date('Y-m-d'),// format: 2021-09-01
-                    'endDate' => $course->enddate ? date('Y-m-d', $course->enddate) : null, // format: 2021-09-01
-                    'timetables' => [
-                        [
-                            'weekdays' => "L,M,X,J,V",
-                            'startTime' => "08:00",
-                            'endTime' => "21:00",
-                            "info" => $course->fullname,
+            $result = self::get_schedule_for_user($user);
+            if ($result) {
+                $calendars = self::parse_course_calendars($course, $result);
+            } 
+            // Default calendar entry.
+            if (count($calendars) == 0) {
+                // Calculate date ranges with same timetable.
+                // TODO: Get actual schedules. Each calendar only supports one date range.
+                $calendars = [
+                    (object) [
+                        'startDate' => $course->startdate ? date('Y-m-d', $course->startdate) : date('Y-m-d'),// format: 2021-09-01
+                        'endDate' => $course->enddate ? date('Y-m-d', $course->enddate) : null, // format: 2021-09-01
+                        'timetables' => [
+                            [
+                                'weekdays' => "L,M,X,J,V",
+                                'startTime' => "08:00",
+                                'endTime' => "21:00",
+                                "info" => $course->fullname,
+                            ]
                         ]
                     ]
-                ]
-            ];
+                ];
+
+            }
+
+
             // Store in cache.
             if ($cache_ttl > 0) {
                 $cache->set($cachekey, (object) ["data" => $calendars, "time" => time()]);
             }
         }
         return $calendars;
+    }
+    static $scheduleforuser = [];
+    /**
+     * Get schedule for user.
+     * TODO: Get schedules from POD.
+     */
+    static public function get_schedule_for_user($user): string {
+        if (isset(self::$scheduleforuser[$user->id])) {
+            return self::$scheduleforuser[$user->id];
+        }
+        // Connect to REST service.
+        $restservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
+        $apiKey = get_config('local_attendancewebhook', 'restservices_schedules_apikey');
+        $dni = strtoupper(substr($user->username, 1)); // TODO get real DNI.
+        $body = json_encode([
+            'apiKey' => $apiKey,
+            "lan" => "es",
+            "document" => $dni,
+            "role" => "PROFESOR",
+            "year" => date('m/d/Y')
+        ]);
+        // Make request with curl.
+        $ch = curl_init($restservice);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $headers = [
+            'Content-Type: application/json',
+        ];
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $result = curl_exec($ch);
+        curl_close($ch);
+
+        self::$scheduleforuser[$user->id] = $result;
+        return $result;
+    }
+    /**
+     * Parse Json and get course calendar summarizing by course names and dates.
+     * Slots came from a REST service.
+     * Course name is followed by a coding in parenthesis that are to be ignored.
+     * @param object $course
+     * @param string $json
+     * @return array sessions structure.
+     */
+    static public function parse_course_calendars($course, $json): array
+    {
+        $calendars = [];
+        $data = json_decode($json);
+        // Course name is followed by a coding in parenthesis that are to be ignored.
+        $coursename = trim(explode('(', $course->fullname)[0]);
+
+        if ($data) {
+            foreach ($data as $slot) {
+                // Parse date in formar YYYYDDMM.
+                $date = substr($slot->day, 0, 4) . '-' . substr($slot->day, 4, 2) . '-' . substr($slot->day, 6, 2);
+                foreach ($slot->schedule as $session) {
+                    // Check coursename coincidence. Compare strings uppercase, no accents.
+                    if (strtoupper(self::strip_accents($session->subjectname)) != strtoupper(self::strip_accents($coursename))) {
+                        continue;
+                    }
+                    $session->sessdate = strtotime($date . ' ' . $session->starts);
+                    $session->duration = strtotime($date . ' ' . $session->ends) - $session->sessdate;
+                    $session->description = "$session->groupname $session->location";
+                    $calendars[] = modattendance_target::get_single_day_calendar($session, $session->description);
+                }
+            }
+        }
+        return $calendars;
+    }
+    /**
+     * Strip accents.
+     */
+    static public function strip_accents($string): string
+    {
+        return strtr(utf8_decode($string), utf8_decode('áéíóúÁÉÍÓÚüÜ'), 'aeiouAEIOUuU');
     }
 }

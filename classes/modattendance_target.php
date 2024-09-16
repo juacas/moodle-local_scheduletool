@@ -170,29 +170,40 @@ class modattendance_target extends target_base
                 // Create info text from dates.
                 $description = content_to_text($session->description, FORMAT_MOODLE);
                 $info = substr("{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')', 0, 100);
-                $days = ["L", "M", "X", "J", "V", "S", "D"];
                 $topics[] = (object)[
                     'topicId' => $prefix . '-attendance-' . $cm->id . '-' . $session->id,
                     'name' => $att->name . " - " . $description,
                     'info' => $info, // Max 100 chars.
                     'externalIntegration' => true,
                     'tag' => substr("{$course->shortname}/{$att->name}",0, 100), // Max 100 chars.
-                    'calendar' => [// format: 2021-09-01
-                        'startDate' => date('Y-m-d', $session->sessdate),
-                        'endDate' => date('Y-m-d', $session->sessdate + $session->duration),
-                        'timetables' => [
-                            [
-                             'weekday' => $days[date('N', $session->sessdate)-1], 
-                             'startTime' => date('H:i', $session->sessdate), 
-                             'endTime' => date('H:i', $session->sessdate + $session->duration),
-                             "info" => $info, // Max 100 chars.
-                            ]
-                        ]
-                    ],
+                    'calendar' => self::get_single_day_calendar($session, $info),
                 ];
             }
         }
         return $topics;
+    }
+    /**
+     * Create calendar structure from a single session.
+     * @param \stdClass $session with sessdate, duration
+     * @param string $info
+     * @return object calendar structure.
+     */
+    static public function get_single_day_calendar(\stdClass $session, string $info): object {
+        $days = ["L", "M", "X", "J", "V", "S", "D"];
+        
+        return (object) [
+            // format: 2021-09-01
+            'startDate' => date('Y-m-d', $session->sessdate),
+            'endDate' => date('Y-m-d', $session->sessdate + $session->duration),
+            'timetables' => [
+                [
+                 'weekday' => $days[date('N', $session->sessdate)-1], 
+                 'startTime' => date('H:i', $session->sessdate), 
+                 'endTime' => date('H:i', $session->sessdate + $session->duration),
+                 "info" => $info, // Max 100 chars.
+                ]
+            ]
+        ];
     }
     /**
      * Get the right status to be used.
