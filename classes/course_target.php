@@ -260,10 +260,9 @@ class course_target extends modattendance_target
         if ($cache_ttl > 0 && $calendar_cache && $calendar_cache->time > (time() - $cache_ttl)) {
             return $calendar_cache->data;
         } else {
-            $result = self::get_schedule_for_user($user);
-            if ($result) {
-                $calendars = self::parse_course_calendars($course, $result);
-            } 
+            $results = self::get_schedule_for_course($course);
+            $calendars = self::parse_course_calendars_pod($course, $results);
+
             // Default calendar entry.
             if (count($calendars) == 0) {
                 // Calculate date ranges with same timetable.
@@ -295,15 +294,89 @@ class course_target extends modattendance_target
     }
     static $scheduleforuser = [];
     /**
+     * Get schedule for course.
+     * Get schedules from POD view.
+     * @param object $course
+     * @return array string jsons.
+     */
+    static public function get_schedule_for_course($course): array
+    {
+        $results = [];
+        $restservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
+        if ($restservice == '') {
+            return [];
+        }
+        $apiKey = get_config('local_attendancewebhook', 'restservices_schedules_apikey');
+        // Get this monday.
+        $monday = strtotime('monday this week');
+        // Format m/d/Y.
+        $day = date('m/d/Y', $monday);
+        $dayTo = date('m/d/Y', strtotime('+28 days', $monday));
+
+        $codsigmas = [];
+        // Get redirected courses from course.
+        $redirectedcourses = lib::get_redirect_courses($course); // TODO
+        // TODO: get all idnumbers.
+        foreach ($redirectedcourses as $redirectedcourse) {
+            // Parse id from course idnumber.
+            $idnumberparts = explode('-', $course->idnumber);
+            if (count($idnumberparts) > 3) {
+                $codsigmas[] = $idnumberparts[3];
+            }
+        }
+        if (empty($codsigmas)) {
+            return [];
+        }
+        foreach ($codsigmas as $codsigma) {
+
+            // Make POST formencoded request with curl.
+            $postfields = [
+                'apikey' => $apiKey,
+                "id" => $codsigma,
+                "dateFrom" => $day,
+                "dateTo" => $dayTo
+            ];
+            // Encode postfields.
+            $postfields = http_build_query($postfields, '', '&');
+            $curl = curl_init($restservice);
+
+            curl_setopt_array($curl, array(
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => $postfields,
+                CURLOPT_HTTPHEADER => array(
+                    'Content-Type: application/x-www-form-urlencoded'
+                ),
+            ));
+
+            $results[] = curl_exec($curl);
+
+            $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $error = curl_error($curl);
+            // $info = curl_getinfo($curl);
+            lib::log_info("Got schedule from $restservice for cod $codsigma from $day to $dayTo --> status $status($error): $result");
+            curl_close($curl);
+        }
+        return $results;
+    }
+    /**
      * Get schedule for user.
      * TODO: Get schedules from POD.
      */
-    static public function get_schedule_for_user($user): string {
+    static public function get_schedule_for_user($user): string
+    {
+        $restservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
+        if ($restservice == '') {
+            return '';
+        }
         if (isset(self::$scheduleforuser[$user->id])) {
             return self::$scheduleforuser[$user->id];
         }
-        // Connect to REST service.
-        $restservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
         $apiKey = get_config('local_attendancewebhook', 'restservices_schedules_apikey');
         $dni = strtoupper(substr($user->username, 1)); // TODO get real DNI.
         // Get this monday.
@@ -340,10 +413,92 @@ class course_target extends modattendance_target
      * Slots came from a REST service.
      * Course name is followed by a coding in parenthesis that are to be ignored.
      * @param object $course
+     * @param array  string $jsons
+     * @return array sessions structure.
+     */
+    static public function parse_course_calendars_pod($course, array $jsons): array
+    {
+        $calendars = [];
+        // Fuse json entries.
+        $data = [];
+        foreach ($jsons as $jsonentry) {
+            $data = array_merge($data, json_decode($jsonentry));
+        }
+        // if ($data) {
+        //     foreach ($data as $slot) {
+        //             $session = new \stdClass();
+        //             // Parse fechaInicio format Y-m-d.
+        //             $session->sessdate = strtotime($slot->fechaInicio . ' ' . $slot->horaInicio);
+        //             $session->duration = strtotime($slot->fechaInicio . ' ' . $slot->horaFin) - $session->sessdate;
+        //             $session->description = "$slot->nombreGrupo $slot->nombreUbicacion";
+        //             $session->weekday = date('N', $session->sessdate);
+        //             $sessions [] = $session;
+        //             $sessionkey = hash('md5', json_encode($session));
+        //             if (!isset($calendars[$sessionkey])) {
+        //                 $calendars[$sessionkey] = modattendance_target::get_single_day_calendar($session, $session->description);
+        //             }
+        //     }
+        // }
+
+        // Iterate grouping in a week.
+        $weekdays = ["L", "M", "X", "J", "V", "S", "D"];
+        $calendars_by_week = [];
+        foreach ($data as $slot) {
+            $weeknumber = date('W', strtotime($slot->fechaInicio));
+            $weekday = date('N', strtotime($slot->fechaInicio));
+            if ($calentry = $calendars_by_week[$weeknumber] ?? false) {
+                $timetable = [
+                    'weekday' => $weekdays[$weekday - 1],
+                    'startTime' => $slot->horaInicio,
+                    'endTime' => $slot->horaFin,
+                    "info" => "$slot->nombreGrupo $slot->nombreUbicacion",
+                ];
+                if (!in_array($timetable, $calentry->timetables)) {
+                    $calentry->timetables[] = $timetable;
+                }
+            } else {
+                $calentry = (object) [
+                    'startDate' => date('Y-m-d', strtotime($slot->fechaInicio)),
+                    'endDate' => date('Y-m-d', strtotime($slot->fechaInicio . ' + 7 days')),
+                    'timetables' => [
+                        [
+                            'weekday' => $weekdays[$weekday - 1],
+                            'startTime' => $slot->horaInicio,
+                            'endTime' => $slot->horaFin,
+                            "info" => "$slot->nombreGrupo $slot->nombreUbicacion",
+                        ]
+                    ]
+                ];
+                $calendars_by_week[$weeknumber] = $calentry;
+            }
+            ;
+        }
+        // Fuse identical weeks.
+        $calendars = [];
+        foreach ($calendars_by_week as $weeknumber => $calentry) {
+            if (isset($calendars[$weeknumber - 1])) {
+                // If calendar are identical fuse them.
+                if ($calentry->timetables == $calendars[$weeknumber - 1]->timetables) {
+                    $calendars[$weeknumber - 1]->endDate = $calentry->endDate;
+                } else {
+                    $calendars[$weeknumber] = $calentry;
+                }
+
+            } else {
+                $calendars[$weeknumber] = $calentry;
+            }
+        }
+        return $calendars;
+    }
+    /**
+     * Parse Json and get course calendar summarizing by course names and dates.
+     * Slots came from a REST service.
+     * Course name is followed by a coding in parenthesis that are to be ignored.
+     * @param object $course
      * @param string $json
      * @return array sessions structure.
      */
-    static public function parse_course_calendars($course, $json): array
+    static public function parse_course_calendars_appcrue($course, $json): array
     {
         $calendars = [];
         $data = json_decode($json);
@@ -357,6 +512,10 @@ class course_target extends modattendance_target
                 foreach ($slot->schedule as $session) {
                     // Check coursename coincidence. Compare strings uppercase, no accents.
                     if (strtoupper(self::strip_accents($session->subjectname)) != strtoupper(self::strip_accents($coursename))) {
+                        continue;
+                    }
+                    // Limit to 14 days.
+                    if (strtotime($date) > strtotime('+14 days')) {
                         continue;
                     }
                     $session->sessdate = strtotime($date . ' ' . $session->starts);
