@@ -424,7 +424,9 @@ class course_target extends modattendance_target
         // Fuse json entries.
         $data = [];
         foreach ($jsons as $jsonentry) {
-            $data = array_merge($data, json_decode($jsonentry));
+            if ($jsonentry) {
+                $data = array_merge($data, $jsonentry);
+            }
         }
         // if ($data) {
         //     foreach ($data as $slot) {

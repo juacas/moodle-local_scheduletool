@@ -831,7 +831,7 @@ class lib
         // Get role method type meta.
         global $DB;
         $redirected = [];
-        $metalinked = $DB->get_records('enrol', array('customint1' => $course->id, 'enrol' => 'meta'), 'courseid', 'customint1');
+        $metalinked = $DB->get_records('enrol', array('courseid' => $course->id, 'enrol' => 'meta'), 'customint1', 'customint1');
         if (!empty($metalinked)) {
             // Search courses in the meta linked list that has "redirected" format.
             $redirected = $DB->get_records_list('course', 'id',  array_keys($metalinked), 'id');
