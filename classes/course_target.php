@@ -262,7 +262,7 @@ class course_target extends modattendance_target
         } else {
             $results = self::get_schedule_for_course($course);
             $calendars = self::parse_course_calendars_pod($course, $results);
-
+            lib::log_info("Got calendar for course $course->id: " . json_encode($calendars));
             // Default calendar entry.
             if (count($calendars) == 0) {
                 // Calculate date ranges with same timetable.
@@ -327,6 +327,7 @@ class course_target extends modattendance_target
         if (empty($codsigmas)) {
             return [];
         }
+        lib::log_info("Getting schedule for course $course->id with codsigmas: " . json_encode($codsigmas));
         foreach ($codsigmas as $codsigma) {
 
             // Make POST formencoded request with curl.
