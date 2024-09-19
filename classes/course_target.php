@@ -450,7 +450,7 @@ class course_target extends modattendance_target
             $weekday = date('N', strtotime($slot->fechaInicio));
             if ($calentry = $calendars_by_week[$weeknumber] ?? false) {
                 $timetable = [
-                    'weekday' => $weekdays[$weekday - 1],
+                    'weekdays' => $weekdays[$weekday - 1],
                     'startTime' => $slot->horaInicio,
                     'endTime' => $slot->horaFin,
                     "info" => "$slot->nombreGrupo $slot->nombreUbicacion",
@@ -464,7 +464,7 @@ class course_target extends modattendance_target
                     'endDate' => date('Y-m-d', strtotime($slot->fechaInicio . ' + 7 days')),
                     'timetables' => [
                         [
-                            'weekday' => $weekdays[$weekday - 1],
+                            'weekdays' => $weekdays[$weekday - 1],
                             'startTime' => $slot->horaInicio,
                             'endTime' => $slot->horaFin,
                             "info" => "$slot->nombreGrupo $slot->nombreUbicacion",
