@@ -262,7 +262,7 @@ class course_target extends modattendance_target
         } else {
             $results = self::get_schedule_for_course($course);
             $calendars = self::parse_course_calendars_pod($course, $results);
-            lib::log_info("Got calendar for course $course->id: " . json_encode($calendars));
+            lib::log_info("Got calendar for course $course->id: $course->idnumber " . json_encode($calendars));
             // Default calendar entry.
             if (count($calendars) == 0) {
                 // Calculate date ranges with same timetable.
@@ -315,11 +315,12 @@ class course_target extends modattendance_target
 
         $codsigmas = [];
         // Get redirected courses from course.
-        $redirectedcourses = lib::get_schedule_equivalent_courses($course);
+        $expandedcourses = lib::get_schedule_equivalent_courses($course);
+        lib::log_info("Getting schedule for course $course->id with redirected courses: " . json_encode($expandedcourses));
         // TODO: get all idnumbers.
-        foreach ($redirectedcourses as $redirectedcourse) {
+        foreach ($expandedcourses as $selectedcourse) {
             // Parse id from course idnumber.
-            $idnumberparts = explode('-', $redirectedcourse->idnumber);
+            $idnumberparts = explode('-', $selectedcourse->idnumber);
             if (count($idnumberparts) > 3) {
                 $codsigmas[] = $idnumberparts[3];
             }
