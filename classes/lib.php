@@ -822,4 +822,24 @@ class lib
             return false;
         }
     }
+    /**
+     * Get redirected courses.
+     * @param \stdClass $course
+     * @return array 
+     */
+    public static function get_schedule_equivalent_courses($course) : array {
+        // Get role method type meta.
+        global $DB;
+        $metalinked = $DB->get_records('enrol', array('customint1' => $course->id, 'enrol' => 'meta'), 'courseid', 'customint1');
+        if (empty($metalinked)) {
+            return [$course];
+        }
+        // Search courses in the meta linked list that has "redirected" format.
+        $redirected = $DB->get_records_list('course', 'id',  array_keys($metalinked), 'id');
+        $redirected = array_filter($redirected, function ($course) {
+            return $course->format == 'redirected';
+        });
+        $redirected [] = $course;
+        return $redirected;
+    }
 }

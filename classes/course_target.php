@@ -315,11 +315,11 @@ class course_target extends modattendance_target
 
         $codsigmas = [];
         // Get redirected courses from course.
-        $redirectedcourses = lib::get_redirect_courses($course); // TODO
+        $redirectedcourses = lib::get_schedule_equivalent_courses($course);
         // TODO: get all idnumbers.
         foreach ($redirectedcourses as $redirectedcourse) {
             // Parse id from course idnumber.
-            $idnumberparts = explode('-', $course->idnumber);
+            $idnumberparts = explode('-', $redirectedcourse->idnumber);
             if (count($idnumberparts) > 3) {
                 $codsigmas[] = $idnumberparts[3];
             }
@@ -353,8 +353,8 @@ class course_target extends modattendance_target
                     'Content-Type: application/x-www-form-urlencoded'
                 ),
             ));
-
-            $results[] = curl_exec($curl);
+            $result =  curl_exec($curl);
+            $results[] = $result;
 
             $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
             $error = curl_error($curl);
