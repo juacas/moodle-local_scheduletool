@@ -70,8 +70,12 @@ $string['restservices_disableincategories'] = 'Disable in these categories';
 $string['restservices_disableincategories_description'] = 'Disable the plugin in these course categories (and its subcategories).';
 $string['restservices_schedules_name'] = 'Schedules Rest service';
 $string['restservices_schedules_description'] = 'Schedules Rest service URL';
+$string['restservices_exams_name'] = 'Exams URL';
+$string['restservices_exams_description'] = 'Exams Rest service URL';
 $string['restservices_schedules_apikey_name'] = 'API key';
 $string['restservices_schedules_apikey_description'] = 'API key for schedules Rest service access.';
+$string['restservices_courseid_regex_name'] = 'Course ID regex';
+$string['restservices_courseid_regex_description'] = 'Regular expression to extract from idnumber the course "id" param used in the Rest service URL. Example: /\d+-\d+-\d+-(\d+)-.*/ for idnumber 45634 like "1-22-1-45634-1-2025"';
 
 $string['skip_redirected_courses_name'] = 'Skip redirected courses';
 $string['skip_redirected_courses_description'] = 'Courses with course_format: redirected (See <a href="https://moodle.org/plugins/format_redirected">https://moodle.org/plugins/format_redirected</a>) will not be processed.';

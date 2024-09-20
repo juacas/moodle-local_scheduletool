@@ -372,6 +372,17 @@ if ($hassiteconfig) {
             256
         )
     );
+    // URL rest service for exams.
+    $settings->add(
+        new admin_setting_configtext(
+            'local_attendancewebhook/restservices_exams_url',
+            new lang_string('restservices_exams_name', 'local_attendancewebhook'),
+            new lang_string('restservices_exams_description', 'local_attendancewebhook'),
+            '',
+            PARAM_URL,
+            256
+        )
+    );
     // Apikey for schedules.
     $settings->add(
         new admin_setting_configtext(
@@ -383,6 +394,18 @@ if ($hassiteconfig) {
             64
         )
     );
+    // Regular expression for extracting the REST id from course->idnumber.
+    $settings->add(
+        new admin_setting_configtext(
+            'local_attendancewebhook/restservices_courseid_regex',
+            new lang_string('restservices_courseid_regex_name', 'local_attendancewebhook'),
+            new lang_string('restservices_courseid_regex_description', 'local_attendancewebhook'),
+            '/\d+-\d+-\d+-(\d+)-.*/',
+            PARAM_TEXT,
+            64
+        )
+    );
+
 
     // Link to page getlogs.php.
     $apiparam = get_config('local_attendancewebhook', 'apikey');

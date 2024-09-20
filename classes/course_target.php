@@ -312,26 +312,23 @@ class course_target extends modattendance_target
             return [];
         }
         $apiKey = get_config('local_attendancewebhook', 'restservices_schedules_apikey');
-    
+        
+        
         $codsigmas = [];
         // Get redirected courses from course.
         $expandedcourses = lib::get_schedule_equivalent_courses($course);
         lib::log_info("Getting schedule for course $course->id with redirected courses: " . json_encode($expandedcourses));
         // TODO: get all idnumbers.
         foreach ($expandedcourses as $selectedcourse) {
-            // Parse id from course idnumber.
-            $idnumberparts = explode('-', $selectedcourse->idnumber);
-            if (count($idnumberparts) > 3) {
-                $codsigmas[] = $idnumberparts[3];
-            }
+            // Get ids for rest service.
+            $codsigmas[] = self::parse_id_from_course($selectedcourse);
         }
-        // Debug TODO
-        //$codsigmas = ["46612","46612","45019","45019"];
-        if (empty($codsigmas)) {
-            return [];
-        }
+
         lib::log_info("Getting schedule for course $course->id with codsigmas: " . json_encode($codsigmas));
         foreach ($codsigmas as $codsigma) {
+            if ($codsigma == '') {
+                continue;
+            }
              // Format m/d/Y.
             $fromDate = date('m/d/Y', (int) $fromDate);
             $toDate = date('m/d/Y', (int) $toDate);
@@ -369,6 +366,20 @@ class course_target extends modattendance_target
             curl_close($curl);
         }
         return $results;
+    }
+    /**
+     * Parse course id from course object according to settings.
+     */
+    static public function parse_id_from_course($course): string {
+        // Parse idnumber eith regexpr.
+        $courseidregex = get_config('local_attendancewebhook', 'restservices_courseid_regex');
+        if ($courseidregex == '') {
+            return '';
+        }
+        if (!preg_match($courseidregex, $course->idnumber, $matches)) {
+            return '';
+        }
+        return $matches[1];
     }
     /**
      * Get schedule for user.
