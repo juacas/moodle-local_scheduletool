@@ -260,9 +260,13 @@ class course_target extends modattendance_target
         if ($cache_ttl > 0 && $calendar_cache && $calendar_cache->time > (time() - $cache_ttl)) {
             return $calendar_cache->data;
         } else {
-            $results = self::get_schedule_for_course($course);
+            // Get this monday.
+            $this_monday = strtotime('monday this week');
+            $toDate = strtotime('+28 days', $this_monday);
+           
+            $results = self::get_schedule_for_course($course, $this_monday, $toDate);
             $calendars = self::parse_course_calendars_pod($course, $results);
-            lib::log_info("Got calendar for course $course->id: $course->idnumber " . json_encode($calendars));
+            lib::log_info(message: "Got calendar for course $course->id: $course->idnumber " . json_encode($calendars));
             // Default calendar entry.
             if (count($calendars) == 0) {
                 // Calculate date ranges with same timetable.
@@ -271,14 +275,14 @@ class course_target extends modattendance_target
                     (object) [
                         'startDate' => $course->startdate ? date('Y-m-d', $course->startdate) : date('Y-m-d'),// format: 2021-09-01
                         'endDate' => $course->enddate ? date('Y-m-d', $course->enddate) : null, // format: 2021-09-01
-                        'timetables' => [
-                            [
-                                'weekdays' => "L,M,X,J,V",
-                                'startTime' => "08:00",
-                                'endTime' => "21:00",
-                                "info" => $course->fullname,
-                            ]
-                        ]
+                        // 'timetables' => [
+                        //     [
+                        //         'weekdays' => "L,M,X,J,V",
+                        //         'startTime' => "08:00",
+                        //         'endTime' => "21:00",
+                        //         "info" => $course->fullname,
+                        //     ]
+                        // ]
                     ]
                 ];
 
@@ -299,20 +303,16 @@ class course_target extends modattendance_target
      * @param object $course
      * @return array string jsons.
      */
-    static public function get_schedule_for_course($course): array
+    static public function get_schedule_for_course($course, int $fromDate, int $toDate): array
     {
+        
         $results = [];
         $restservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
         if ($restservice == '') {
             return [];
         }
         $apiKey = get_config('local_attendancewebhook', 'restservices_schedules_apikey');
-        // Get this monday.
-        $monday = strtotime('monday this week');
-        // Format m/d/Y.
-        $day = date('m/d/Y', $monday);
-        $dayTo = date('m/d/Y', strtotime('+28 days', $monday));
-
+    
         $codsigmas = [];
         // Get redirected courses from course.
         $expandedcourses = lib::get_schedule_equivalent_courses($course);
@@ -325,18 +325,22 @@ class course_target extends modattendance_target
                 $codsigmas[] = $idnumberparts[3];
             }
         }
+        // Debug TODO
+        //$codsigmas = ["46612","46612","45019","45019"];
         if (empty($codsigmas)) {
             return [];
         }
         lib::log_info("Getting schedule for course $course->id with codsigmas: " . json_encode($codsigmas));
         foreach ($codsigmas as $codsigma) {
-
+             // Format m/d/Y.
+            $fromDate = date('m/d/Y', (int) $fromDate);
+            $toDate = date('m/d/Y', (int) $toDate);
             // Make POST formencoded request with curl.
             $postfields = [
                 'apikey' => $apiKey,
                 "id" => $codsigma,
-                "dateFrom" => $day,
-                "dateTo" => $dayTo
+                "dateFrom" => $fromDate,
+                "dateTo" => $toDate
             ];
             // Encode postfields.
             $postfields = http_build_query($postfields, '', '&');
@@ -361,7 +365,7 @@ class course_target extends modattendance_target
             $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
             $error = curl_error($curl);
             // $info = curl_getinfo($curl);
-            lib::log_info("Got schedule from $restservice for cod $codsigma from $day to $dayTo --> status $status($error): $result");
+            lib::log_info("Got schedule from $restservice for cod $codsigma from $fromDate to $toDate --> status $status($error): $result");
             curl_close($curl);
         }
         return $results;
@@ -426,22 +430,7 @@ class course_target extends modattendance_target
         foreach ($jsons as $jsonentry) {
             $data = array_merge($data, json_decode($jsonentry) ?? []);
         }
-        // if ($data) {
-        //     foreach ($data as $slot) {
-        //             $session = new \stdClass();
-        //             // Parse fechaInicio format Y-m-d.
-        //             $session->sessdate = strtotime($slot->fechaInicio . ' ' . $slot->horaInicio);
-        //             $session->duration = strtotime($slot->fechaInicio . ' ' . $slot->horaFin) - $session->sessdate;
-        //             $session->description = "$slot->nombreGrupo $slot->nombreUbicacion";
-        //             $session->weekday = date('N', $session->sessdate);
-        //             $sessions [] = $session;
-        //             $sessionkey = hash('md5', json_encode($session));
-        //             if (!isset($calendars[$sessionkey])) {
-        //                 $calendars[$sessionkey] = modattendance_target::get_single_day_calendar($session, $session->description);
-        //             }
-        //     }
-        // }
-
+      
         // Iterate grouping in a week.
         $weekdays = ["L", "M", "X", "J", "V", "S", "D"];
         $calendars_by_week = [];
@@ -475,21 +464,7 @@ class course_target extends modattendance_target
             }
             ;
         }
-        // Fuse identical weeks.
-        $calendars = [];
-        foreach ($calendars_by_week as $weeknumber => $calentry) {
-            if (isset($calendars[$weeknumber - 1])) {
-                // If calendar are identical fuse them.
-                if ($calentry->timetables == $calendars[$weeknumber - 1]->timetables) {
-                    $calendars[$weeknumber - 1]->endDate = $calentry->endDate;
-                } else {
-                    $calendars[$weeknumber] = $calentry;
-                }
-
-            } else {
-                $calendars[$weeknumber] = $calentry;
-            }
-        }
+        $calendars = lib::compress_calendars($calendars_by_week);
         return $calendars;
     }
     /**

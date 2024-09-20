@@ -842,4 +842,52 @@ class lib
         $redirected[] = $course;
         return $redirected;
     }
+    /**
+     * Compress calendars by grouping by weeks and days.
+     * @param array $calendars ordered by startdate. All calendars starts on monday and ends in next monday.
+     */
+    public static function compress_calendars($calendars_by_week) {
+        // Fuse identical weeks. Assume array is ordered by week.
+        $calendars = [];
+        $lastcalentry = null;
+        while (count($calendars_by_week) > 0) {
+            // Just check the previous calentry.
+            $calentry = reset($calendars_by_week);
+            $week = key($calendars_by_week);
+            unset($calendars_by_week[$week]);
+
+            if ($lastcalentry && 
+                $calentry->startDate == $lastcalentry->endDate &&
+                $calentry->timetables == $lastcalentry->timetables) {
+                $lastcalentry->endDate = $calentry->endDate;
+            } else {
+                $calendars[$week] = $calentry;
+                $lastcalentry = $calentry;
+            }
+        }
+
+        // Fuse identical days in timetables.
+        foreach ($calendars as $week => $calentry) {
+            $timetables = [];
+            foreach ($calentry->timetables as $timetable) {
+                // Seach in timetables.
+                $same = current(array_filter($timetables, function ($t) use ($timetable) {
+                    return $t->startTime == $timetable['startTime'] &&
+                            $t->endTime == $timetable['endTime'] &&
+                            $t->info == $timetable['info'];
+                }));
+                if ($same) {
+                    if (!strpos($same->weekdays, $timetable['weekdays'])) {
+                        $same->weekdays .= ',' . $timetable['weekdays'];
+                    }
+                } else {
+                    $timetables[] = (object) $timetable;
+                }
+                
+            }
+            $calentry->timetables = array_values($timetables);
+        }
+        
+        return $calendars;
+    }
 }
