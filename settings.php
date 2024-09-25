@@ -410,6 +410,17 @@ if ($hassiteconfig) {
     // Link to page getlogs.php.
     $apiparam = get_config('local_attendancewebhook', 'apikey');
     $logurl = new \moodle_url('/local/attendancewebhook/getlogs.php', ['apikey' => $apiparam]);
+
+    // Debug list of authorized orgnizers.
+    $settings->add(
+        new admin_setting_configtextarea(
+            'local_attendancewebhook/authorized_organizers',
+            new lang_string('authorized_organizers_name', 'local_attendancewebhook'),
+            new lang_string('authorized_organizers_description', 'local_attendancewebhook'),
+            '',
+            PARAM_TEXT
+        )
+    );
    
     // Checkbox for enabling the logs.
     $settings->add(

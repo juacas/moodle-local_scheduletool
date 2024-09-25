@@ -24,7 +24,7 @@
 namespace local_attendancewebhook;
 
 require_once(__DIR__ . '/../../config.php');
-require_once($CFG->libdir.'/filelib.php');
+require_once($CFG->libdir . '/filelib.php');
 /** @var \moodle_database $DB */
 global $DB;
 
@@ -50,7 +50,7 @@ if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != ge
     header('HTTP/1.0 401 Unauthorized');
     die();
 }
-lib::log_info('Request getUserData:' . 'User: ' . $userid . ' Apikey: ' . $apikey . ' Apiuser: ' . $apiuser. '===========================');
+lib::log_info('Request getUserData:' . 'User: ' . $userid . ' Apikey: ' . $apikey . ' Apiuser: ' . $apiuser . '===========================');
 // Find userid.
 $user_data = lib::get_user_data($userid);
 $remote_user_data = lib::get_user_data_remote($userid);
@@ -62,14 +62,21 @@ if (!$user_data && count($remote_user_data) == 0) {
 // Merge user data from local and remote selecting users with type "ORGANIZER" first.
 foreach ($remote_user_data as $remote_user) {
     if ($remote_user->rol == 'ORGANISER') {
-        $user_data = $remote_user;
+        if ($user_data)
+            $user_data = $remote_user;
         break;
     }
     if (!$user_data) {
         $user_data = $remote_user;
     }
 }
-
+if ($user_data) {
+    // Get authorized organizers.
+    $authorized_organizers = get_config('local_attendancewebhook', 'authorized_organizers');
+    if ($authorized_organizers != '' && !str_contains($authorized_organizers, $user_data->email)) {
+        $user_data->rol = 'ATTENDEE';
+    }
+}
 $response = json_encode($user_data, JSON_HEX_QUOT | JSON_PRETTY_PRINT);
 
 echo $response;
