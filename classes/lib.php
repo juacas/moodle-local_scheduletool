@@ -872,13 +872,13 @@ class lib
             foreach ($calentry->timetables as $timetable) {
                 // Seach in timetables.
                 $same = current(array_filter($timetables, function ($t) use ($timetable) {
-                    return $t->startTime == $timetable['startTime'] &&
-                            $t->endTime == $timetable['endTime'] &&
-                            $t->info == $timetable['info'];
+                    return $t->startTime == $timetable->startTime &&
+                            $t->endTime == $timetable->endTime &&
+                            $t->info == $timetable->info;
                 }));
                 if ($same) {
-                    if (!strpos($same->weekdays, $timetable['weekdays'])) {
-                        $same->weekdays .= ',' . $timetable['weekdays'];
+                    if (!strpos($same->weekdays, $timetable->weekdays)) {
+                        $same->weekdays .= ',' . $timetable->weekdays;
                     }
                 } else {
                     $timetables[] = (object) $timetable;

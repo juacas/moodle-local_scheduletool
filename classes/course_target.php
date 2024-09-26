@@ -270,7 +270,6 @@ class course_target extends modattendance_target
             // Default calendar entry.
             if (count($calendars) == 0) {
                 // Calculate date ranges with same timetable.
-                // TODO: Get actual schedules. Each calendar only supports one date range.
                 $calendars = [
                     (object) [
                         'startDate' => $course->startdate ? date('Y-m-d', $course->startdate) : date('Y-m-d'),// format: 2021-09-01
@@ -307,63 +306,88 @@ class course_target extends modattendance_target
     {
         
         $results = [];
-        $restservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
-        if ($restservice == '') {
-            return [];
-        }
+        $schedulerestservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
+        $examrestservice = get_config('local_attendancewebhook', 'restservices_exams_url');
         $apiKey = get_config('local_attendancewebhook', 'restservices_schedules_apikey');
         
-        
-        $codsigmas = [];
-        // Get redirected courses from course.
-        $expandedcourses = lib::get_schedule_equivalent_courses($course);
-        lib::log_info("Getting schedule for course $course->id with redirected courses: " . json_encode($expandedcourses));
-        // TODO: get all idnumbers.
-        foreach ($expandedcourses as $selectedcourse) {
-            // Get ids for rest service.
-            $codsigmas[] = self::parse_id_from_course($selectedcourse);
-        }
 
-        lib::log_info("Getting schedule for course $course->id with codsigmas: " . json_encode($codsigmas));
-        foreach ($codsigmas as $codsigma) {
-            if ($codsigma == '') {
-                continue;
+        if ($schedulerestservice != '' || $examrestservice != '') {
+            $codsigmas = [];
+            // Get redirected courses from course.
+            $expandedcourses = lib::get_schedule_equivalent_courses($course);
+            lib::log_info("Getting schedule for course $course->id with redirected courses: " . json_encode($expandedcourses));
+            // TODO: get all idnumbers.
+            foreach ($expandedcourses as $selectedcourse) {
+                // Get ids for rest service.
+                $codsigmas[] = self::parse_id_from_course($selectedcourse);
             }
-             // Format m/d/Y.
-            $fromDate = date('m/d/Y', (int) $fromDate);
-            $toDate = date('m/d/Y', (int) $toDate);
-            // Make POST formencoded request with curl.
-            $postfields = [
-                'apikey' => $apiKey,
-                "id" => $codsigma,
-                "dateFrom" => $fromDate,
-                "dateTo" => $toDate
-            ];
-            // Encode postfields.
-            $postfields = http_build_query($postfields, '', '&');
-            $curl = curl_init($restservice);
-
-            curl_setopt_array($curl, array(
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => '',
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => $postfields,
-                CURLOPT_HTTPHEADER => array(
-                    'Content-Type: application/x-www-form-urlencoded'
-                ),
-            ));
-            $result =  curl_exec($curl);
-            $results[] = $result;
-
-            $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            $error = curl_error($curl);
-            // $info = curl_getinfo($curl);
-            lib::log_info("Got schedule from $restservice for cod $codsigma from $fromDate to $toDate --> status $status($error): $result");
-            curl_close($curl);
+    
+            lib::log_info("Getting schedule for course $course->id with codsigmas: " . json_encode($codsigmas));
+            foreach ($codsigmas as $codsigma) {
+                if ($codsigma == '') {
+                    continue;
+                }
+                 // Format m/d/Y.
+                $fromDate = date('m/d/Y', (int) $fromDate);
+                $toDate = date('m/d/Y', (int) $toDate);
+                // Make POST formencoded request with curl.
+                //$codsigma = 46671; // TODO debug
+                $postfields = [
+                    'apikey' => $apiKey,
+                    "id" => $codsigma,
+                    "dateFrom" => $fromDate,
+                    "dateTo" => $toDate
+                ];
+                // Encode postfields.
+                $postfields = http_build_query($postfields, '', '&');
+                if ($schedulerestservice != ''){
+                    $curl = curl_init($schedulerestservice);
+                    curl_setopt_array($curl, array(
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_ENCODING => '',
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 0,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => 'POST',
+                        CURLOPT_POSTFIELDS => $postfields,
+                        CURLOPT_HTTPHEADER => array(
+                            'Content-Type: application/x-www-form-urlencoded'
+                        ),
+                    ));
+                    $result =  curl_exec($curl);
+                    $results[] = $result;
+        
+                    $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                    $error = curl_error($curl);
+                    // $info = curl_getinfo($curl);
+                    lib::log_info("Got schedule from $schedulerestservice for cod $codsigma from $fromDate to $toDate --> status $status($error): $result");
+                }
+                if ($examrestservice != ''){
+                    $curl = curl_init($examrestservice);
+                    curl_setopt_array($curl, array(
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_ENCODING => '',
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 0,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => 'POST',
+                        CURLOPT_POSTFIELDS => $postfields,
+                        CURLOPT_HTTPHEADER => array(
+                            'Content-Type: application/x-www-form-urlencoded'
+                        ),
+                    ));
+                    $result =  curl_exec($curl);
+                    $results[] = $result;
+        
+                    $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                    $error = curl_error($curl);
+                    // $info = curl_getinfo($curl);
+                    lib::log_info("Got exams from $examrestservice for cod $codsigma from $fromDate to $toDate --> status $status($error): $result");
+                }
+                curl_close($curl);
+            } 
         }
         return $results;
     }
@@ -439,37 +463,46 @@ class course_target extends modattendance_target
         // Fuse json entries.
         $data = [];
         foreach ($jsons as $jsonentry) {
-            $data = array_merge($data, json_decode($jsonentry) ?? []);
+            $entry = json_decode($jsonentry);
+            $data = array_merge($data, $entry??[]);
         }
       
         // Iterate grouping in a week.
         $weekdays = ["L", "M", "X", "J", "V", "S", "D"];
         $calendars_by_week = [];
         foreach ($data as $slot) {
+            // Complete fechainicio and fechafin if only has fecha (in exams structure).
+            // "fecha" format is d/m/Y convert to Y-m-d.
+            $fecha = date('Y-m-d', strtotime(str_replace('/', '-', $slot->fecha)));
+            if (!isset($slot->fechaInicio)) {
+                $slot->fechaInicio = $fecha;
+            }
+            if (!isset($slot->fechaFin)) {
+                $slot->fechaFin = $fecha;
+            }
             $weeknumber = date('W', strtotime($slot->fechaInicio));
             $weekday = date('N', strtotime($slot->fechaInicio));
+            $timetable = (object)[
+                'weekdays' => $weekdays[$weekday - 1],
+                'startTime' => $slot->horaInicio,
+                'endTime' => $slot->horaFin,
+                "info" => "$slot->nombreGrupo ($slot->nombreUbicacion)",
+            ];
             if ($calentry = $calendars_by_week[$weeknumber] ?? false) {
-                $timetable = [
-                    'weekdays' => $weekdays[$weekday - 1],
-                    'startTime' => $slot->horaInicio,
-                    'endTime' => $slot->horaFin,
-                    "info" => "$slot->nombreGrupo $slot->nombreUbicacion",
-                ];
+                // Add timetable to existent calentry if not exists.
                 if (!in_array($timetable, $calentry->timetables)) {
                     $calentry->timetables[] = $timetable;
                 }
             } else {
+                // Get "monday this week" for $slot->fechaInicio.
+                $startweek = strtotime('monday this week', strtotime($slot->fechaInicio));
+                $startweekdate = date('Y-m-d', $startweek);
+                $endweekdate = date('Y-m-d', strtotime($startweekdate . ' + 6 days'));
+                // Create new entry.
                 $calentry = (object) [
-                    'startDate' => date('Y-m-d', strtotime($slot->fechaInicio)),
-                    'endDate' => date('Y-m-d', strtotime($slot->fechaInicio . ' + 7 days')),
-                    'timetables' => [
-                        [
-                            'weekdays' => $weekdays[$weekday - 1],
-                            'startTime' => $slot->horaInicio,
-                            'endTime' => $slot->horaFin,
-                            "info" => "$slot->nombreGrupo $slot->nombreUbicacion",
-                        ]
-                    ]
+                    'startDate' => $startweekdate,
+                    'endDate' => $endweekdate,
+                    'timetables' => [$timetable],
                 ];
                 $calendars_by_week[$weeknumber] = $calentry;
             }
