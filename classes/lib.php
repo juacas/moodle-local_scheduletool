@@ -489,6 +489,7 @@ class lib
     }
     /**
      * Get user_data_remote from the given user.
+     * May return multiple user_data structures for the same user from the proxyed endpoints.
      * @param $userid string User id.
      * @return array User_data structures collected. Empty array if no user found.
      */

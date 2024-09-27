@@ -77,7 +77,9 @@ $string['restservices_schedules_apikey_description'] = 'API key for schedules Re
 $string['restservices_courseid_regex_name'] = 'Course ID regex';
 $string['restservices_courseid_regex_description'] = 'Regular expression to extract from idnumber the course "id" param used in the Rest service URL. Example: /\d+-\d+-\d+-(\d+)-.*/ for idnumber 45634 like "1-22-1-45634-1-2025"';
 $string['authorized_organizers_name'] = 'Authorized organizers';
-$string['authorized_organizers_description'] = 'List of authorized organizers. One email per line. Format: Email';
+$string['authorized_organizers_description'] = 'List of authorized organizers. If set only these users can be organizers. One email per line. Format: Email';
+$string['authorized_users_name'] = 'Authorized users';
+$string['authorized_users_description'] = 'List of authorized users. If set only these users can access the plugin. One email per line. Format: Email';
 $string['skip_redirected_courses_name'] = 'Skip redirected courses';
 $string['skip_redirected_courses_description'] = 'Courses with course_format: redirected (See <a href="https://moodle.org/plugins/format_redirected">https://moodle.org/plugins/format_redirected</a>) will not be processed.';
 $string['local_caches_ttl'] = 'TTL local cache';

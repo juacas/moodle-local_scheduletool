@@ -274,14 +274,6 @@ class course_target extends modattendance_target
                     (object) [
                         'startDate' => $course->startdate ? date('Y-m-d', $course->startdate) : date('Y-m-d'),// format: 2021-09-01
                         'endDate' => $course->enddate ? date('Y-m-d', $course->enddate) : null, // format: 2021-09-01
-                        // 'timetables' => [
-                        //     [
-                        //         'weekdays' => "L,M,X,J,V",
-                        //         'startTime' => "08:00",
-                        //         'endTime' => "21:00",
-                        //         "info" => $course->fullname,
-                        //     ]
-                        // ]
                     ]
                 ];
 
@@ -304,13 +296,11 @@ class course_target extends modattendance_target
      */
     static public function get_schedule_for_course($course, int $fromDate, int $toDate): array
     {
-        
         $results = [];
         $schedulerestservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
         $examrestservice = get_config('local_attendancewebhook', 'restservices_exams_url');
         $apiKey = get_config('local_attendancewebhook', 'restservices_schedules_apikey');
         
-
         if ($schedulerestservice != '' || $examrestservice != '') {
             $codsigmas = [];
             // Get redirected courses from course.
@@ -346,7 +336,7 @@ class course_target extends modattendance_target
                         CURLOPT_RETURNTRANSFER => true,
                         CURLOPT_ENCODING => '',
                         CURLOPT_MAXREDIRS => 10,
-                        CURLOPT_TIMEOUT => 0,
+                        CURLOPT_TIMEOUT => 1,
                         CURLOPT_FOLLOWLOCATION => true,
                         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                         CURLOPT_CUSTOMREQUEST => 'POST',
@@ -369,7 +359,7 @@ class course_target extends modattendance_target
                         CURLOPT_RETURNTRANSFER => true,
                         CURLOPT_ENCODING => '',
                         CURLOPT_MAXREDIRS => 10,
-                        CURLOPT_TIMEOUT => 0,
+                        CURLOPT_TIMEOUT => 1,
                         CURLOPT_FOLLOWLOCATION => true,
                         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                         CURLOPT_CUSTOMREQUEST => 'POST',

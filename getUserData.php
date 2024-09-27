@@ -71,8 +71,14 @@ foreach ($remote_user_data as $remote_user) {
     }
 }
 if ($user_data) {
+    // Check if user is authorized.
+    $authorized_users = trim(get_config('local_attendancewebhook', 'authorized_users'));
+    if ($authorized_users != '' && !str_contains(get_config('local_attendancewebhook', 'authorized_users'), $user_data->email)) {
+        header('HTTP/1.0 401 Unauthorized');
+        die();
+    }
     // Get authorized organizers.
-    $authorized_organizers = get_config('local_attendancewebhook', 'authorized_organizers');
+    $authorized_organizers = trim(get_config('local_attendancewebhook', 'authorized_organizers'));
     if ($authorized_organizers != '' && !str_contains($authorized_organizers, $user_data->email)) {
         $user_data->rol = 'ATTENDEE';
     }

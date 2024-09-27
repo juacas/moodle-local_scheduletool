@@ -421,7 +421,16 @@ if ($hassiteconfig) {
             PARAM_TEXT
         )
     );
-   
+    // White list of authorized users.
+    $settings->add(
+        new admin_setting_configtextarea(
+            'local_attendancewebhook/authorized_users',
+            new lang_string('authorized_users_name', 'local_attendancewebhook'),
+            new lang_string('authorized_users_description', 'local_attendancewebhook'),
+            '',
+            PARAM_TEXT
+        )
+    );
     // Checkbox for enabling the logs.
     $settings->add(
         new admin_setting_configcheckbox(
