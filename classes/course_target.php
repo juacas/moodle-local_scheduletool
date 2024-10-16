@@ -226,13 +226,19 @@ class course_target extends modattendance_target
                 // Course can have more than one timetable. Add a sequence number to the topicId.
                 $sequence = 0;
                 $calendars = self::get_course_calendars($course, $user);
+               
                 foreach ($calendars as $calendar) {
                     $sequence = hash('md5', json_encode($calendar));
+                    if (isset($calendar->timetables)) {
+                        $info = get_string('withschedule', 'local_attendancewebhook');
+                    } else {
+                        $info = get_string('withoutschedule', 'local_attendancewebhook');
+                    }
                     $topics[] = (object) [
                         'topicId' => $prefix . '-course-' . $course->id . '-' . $sequence,
                         'name' => $course->shortname,
                         // Only 100 characters.
-                        'info' => substr($course->fullname, 0, 100), // Max 100 chars.
+                        'info' => $info, //substr($course->fullname, 0, 100), // Max 100 chars.
                         'externalIntegration' => true,
                         'tag' => 'course',
                         'calendar' => $calendar,

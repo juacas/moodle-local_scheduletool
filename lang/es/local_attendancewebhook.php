@@ -84,3 +84,6 @@ $string['field_mapping_heading'] = 'Mapeo de campos';
 $string['field_mapping_description'] = 'Mapeo de campos para los datos de usuario';
 $string['logs_enabled_name'] = 'Log activos';
 $string['logs_enabled_description'] = 'Habilitar o deshabilitar los logs. Los logs se guardan en moodledata/local/attendancewebhook/logs/mtrace.log y se pueden ver en <a href="{$a}">GetLogs</a>.';
+
+$string['withoutschedule'] = 'Sin información de horario';
+$string['withschedule'] = 'Según horario docente';

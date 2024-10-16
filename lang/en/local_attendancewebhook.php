@@ -108,3 +108,6 @@ $string['field_mapping_heading'] = 'Field mapping';
 $string['field_mapping_description'] = 'Field names from which to extract user data';
 $string['logs_enabled_name'] = 'Enable logs';
 $string['logs_enabled_description'] = 'Enable or disable logs. Logs are written to moodle_data/attendancewebhook/logs/trace.log and can be viewed in <a href="{$a}">GetLogs</a>.';
+
+$string['withoutschedule'] = 'No schedule';
+$string['withschedule'] = 'As in schedule';
