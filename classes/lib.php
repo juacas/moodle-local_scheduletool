@@ -851,6 +851,7 @@ class lib
         // Fuse identical weeks. Assume array is ordered by week.
         $calendars = [];
         $lastcalentry = null;
+        $lastcalentryweek = null;
         while (count($calendars_by_week) > 0) {
             // Just check the previous calentry.
             $calentry = reset($calendars_by_week);
@@ -858,13 +859,14 @@ class lib
             unset($calendars_by_week[$week]);
 
             if ($lastcalentry && 
-                $calentry->startDate == $lastcalentry->endDate &&
+                $week == $lastcalentryweek+1 &&
                 $calentry->timetables == $lastcalentry->timetables) {
                 $lastcalentry->endDate = $calentry->endDate;
             } else {
                 $calendars[$week] = $calentry;
                 $lastcalentry = $calentry;
             }
+            $lastcalentryweek = $week;
         }
 
         // Fuse identical days in timetables.
