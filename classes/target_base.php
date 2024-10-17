@@ -82,7 +82,7 @@ abstract class target_base
     {
         $topicparts = explode('-', $topicId);
         
-        if (count($topicparts) < 3 || count($topicparts) > 4 || $topicparts[0] == '' || $topicparts[1] == '') {
+        if (count($topicparts) < 3 || $topicparts[0] == '' || $topicparts[1] == '') {
             throw new \Exception("Invalid topicId format: {$topicId}");
         }
         $type = $topicparts[1];

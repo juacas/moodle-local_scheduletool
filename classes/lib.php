@@ -844,8 +844,75 @@ class lib
         return $redirected;
     }
     /**
-     * Compress calendars by grouping by weeks and days.
-     * @param array $calendars ordered by startdate. All calendars starts on monday and ends in next monday.
+     * Collect calendar events grouping by week calculating weekday.
+     * return timetable structure:
+     * {
+     * startDate: 'Y-m-d',
+     * endDate: 'Y-m-d',
+     * timetables: [
+     * {
+     *  weekdays: 'L,M,X,J,V,S,D',
+     *  startTime: 'HH:MM',
+     *  endTime: 'HH:MM',
+     *  info: 'info'
+     * }
+     * ]
+     * @param array $data of slot events.
+     * @param bool $collectbyweek if true, group by week.
+     * @return array of calendar events grouped by week. key is week number. value is an object with timetable structure.
+     */
+    public static function collect_calendars($data, $collectbyweek = false): array {
+         // Iterate grouping in a week.
+         $weekdays = ["L", "M", "X", "J", "V", "S", "D"];
+         $calendars_by_week = [];
+         foreach ($data as $slot) {
+             // Complete fechainicio and fechafin if only has fecha (in exams structure).
+             // "fecha" format is d/m/Y convert to Y-m-d.
+             $fecha = date('Y-m-d', strtotime(str_replace('/', '-', $slot->fecha)));
+             if (!isset($slot->fechaInicio)) {
+                 $slot->fechaInicio = $fecha;
+             }
+             if (!isset($slot->fechaFin)) {
+                 $slot->fechaFin = $fecha;
+             }
+             $weeknumber = date('W', strtotime($slot->fechaInicio));
+             $weekday = date('N', strtotime($slot->fechaInicio));
+             $timetable = (object)[
+                 'weekdays' => $weekdays[$weekday - 1],
+                 'startTime' => $slot->horaInicio,
+                 'endTime' => $slot->horaFin,
+                 "info" => "$slot->nombreGrupo ($slot->nombreUbicacion)",
+             ];
+
+             if ($collectbyweek && $calentry = $calendars_by_week[$weeknumber] ?? false) {
+                 // Add timetable to existent calentry if not exists.
+                 if (!in_array($timetable, $calentry->timetables)) {
+                     $calentry->timetables[] = $timetable;
+                 }
+             } else {
+                 // Get "monday this week" for $slot->fechaInicio.
+                 $startweek = strtotime('monday this week', strtotime($slot->fechaInicio));
+                 $startweekdate = date('Y-m-d', $startweek);
+                 $endweekdate = date('Y-m-d', strtotime($startweekdate . ' + 6 days'));
+                 // Create new entry.
+                 $calentry = (object) [
+                     'startDate' => $startweekdate,
+                     'endDate' => $endweekdate,
+                     'timetables' => [$timetable],
+                 ];
+                 
+                 if ($collectbyweek) {
+                    $calendars_by_week[$weeknumber] = $calentry;
+                 } else {
+                    $calendars_by_week[] = $calentry;
+                 }
+             }
+         }
+         return $calendars_by_week;
+    }
+    /**
+     * Compress calendars by grouping consecutive weeks with the same timetable.
+     * @param array $calendars ordered by startdate. All calendars starts on monday and ends in next sunday.
      */
     public static function compress_calendars($calendars_by_week) {
         // Fuse identical weeks. Assume array is ordered by week.
@@ -885,12 +952,10 @@ class lib
                     }
                 } else {
                     $timetables[] = (object) $timetable;
-                }
-                
+                }            
             }
             $calentry->timetables = array_values($timetables);
         }
-        
         return $calendars;
     }
 }

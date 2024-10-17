@@ -50,16 +50,33 @@ class course_target extends modattendance_target
     }
     /**
      * Parse topicId to get cmid and courseid.
+     * Format is "prefix-course-courseid-Y-m-d-h:m-info"
+     * or "prefix-course-courseid-sufix"
      * @param string $topicId
-     * @return array [type, prefix, courseid, sequence]
+     * @return array [type, prefix, courseid, sufix]
      */
     public static function parse_topic_id(string $topicId): array
     {
-        $topicparts = explode('-', $topicId);
-        if (count($topicparts) < 3 || count($topicparts) > 4 || $topicparts[0] == '' || $topicparts[1] != 'course' || !is_numeric($topicparts[2])) {
+        // Format is "prefix-course-courseid-Y-m-d-h:m-info"
+        // or "prefix-course-courseid-sufix"
+        // Use regex to parse topicId.
+        $regex = "/^(\w+)-course-(\d+)-(?:(\d{4}-\d{2}-\d{2})-(\d{2}:\d{2})-)?(.*)$/";
+        if (!preg_match($regex, $topicId, $matches)) {
             throw new \Exception("Invalid course topicId format: {$topicId}");
         }
-        return ['course', $topicparts[0], $topicparts[2], $topicparts[3] ?? null];
+        // Get parts.
+        $prefix = $matches[1];
+        $courseid = $matches[2];
+        $sufix = $matches[5] ?? null;
+        $date = $matches[3] ?? null;
+        $time = $matches[4] ?? null;
+        return ['course', $prefix, $courseid, $sufix, $date, $time];
+
+        // $topicparts = explode('-', $topicId);
+        // if (count($topicparts) < 3 || count($topicparts) > 4 || $topicparts[0] == '' || $topicparts[1] != 'course' || !is_numeric($topicparts[2])) {
+        //     throw new \Exception("Invalid course topicId format: {$topicId}");
+        // }
+        // return ['course', $topicparts[0], $topicparts[2], $topicparts[3] ?? null];
     }
     /**
      * Search a session with the same opening time. If not found, create a new one.
@@ -72,8 +89,25 @@ class course_target extends modattendance_target
         $this->check_configuration();
         // Find a session with the same opening time.
         global $DB;
-        $params = ['attendanceid' => $this->cm->instance, 'sessdate' => $this->event->get_opening_time()];
-        $sessions = $DB->get_records('attendance_sessions', $params);
+        $description = null;
+        [$type, $prefix, $courseid, $sufix, $date, $time] = self::parse_topic_id($this->event->getTopic()->get_topic_id());
+        if ($date == false || $time == false) {
+            // This event is not matched to schedule.
+            $opening_time = $this->event->get_opening_time();
+            $description = $this->event->get_event_note();
+            $params = ['attendanceid' => $this->cm->instance, 'sessdate' => $opening_time];
+            $sessions = $DB->get_records('attendance_sessions', $params);
+        } else {
+            $opening_time = strtotime($date . ' ' . $time); // Instead of $this->event->get_opening_time() to match schedule.
+            $description = $sufix;
+            $params = ['attendanceid' => $this->cm->instance,
+                        'sessdate' => $opening_time, 
+                        'description' => $sufix];
+            // Get session by date and description.
+            $wheresql = 'attendanceid = :attendanceid AND sessdate = :sessdate AND ' . $DB->sql_compare_text('description') . ' = :description';
+            $sessions = $DB->get_records_select('attendance_sessions', $wheresql, $params);
+        }
+
         $message = count($sessions) . ' attendance session(s) ' . json_encode($sessions) . ' found.';
         if (count($sessions) > 1) {
             $this->errors[] = $message;
@@ -87,10 +121,10 @@ class course_target extends modattendance_target
                 lib::log_info("Attendance session {$session->id} selected for update.");
             } else {
                 $session = new \stdClass();
-                $session->sessdate = $this->event->get_opening_time();
+                $session->sessdate = $opening_time;
                 $session->duration = $this->event->get_closing_time() == null ? 3600 : $this->event->get_closing_time() - $this->event->get_opening_time();
                 $session->groupid = 0;
-                $session->description = $this->event->get_event_note();
+                $session->description = $description;
                 $session->descriptionitemid = -1;
                 $session->descriptionformat = FORMAT_PLAIN;
                 $session->calendarevent = 0; // Disable calendar event creation.
@@ -223,22 +257,39 @@ class course_target extends modattendance_target
                 ) {
                     continue;
                 }
-                // Course can have more than one timetable. Add a sequence number to the topicId.
-                $sequence = 0;
+
                 $calendars = self::get_course_calendars($course, $user);
-               
                 foreach ($calendars as $calendar) {
-                    $sequence = hash('md5', json_encode($calendar));
+                    // Check if course has a timetable.
                     if (isset($calendar->timetables)) {
                         $info = get_string('withschedule', 'local_attendancewebhook');
                     } else {
                         $info = get_string('withoutschedule', 'local_attendancewebhook');
                     }
+                    // If timetable has only one timetable use info from it.
+                    if (isset($calendar->timetables) && count($calendar->timetables) == 1) {
+                        // Get week number.
+                        // $weeknumber = date('W', strtotime($calendar->startDate));
+                        // $info = $calendar->timetables[0]->info . get_string('week') . ' ' . $weeknumber;
+                        $info = $calendar->timetables[0]->info . ' ' 
+                                . $calendar->startDate . ' '
+                                . $calendar->timetables[0]->startTime;
+                        $sufix = $calendar->startDate . '-' 
+                                . $calendar->timetables[0]->startTime . '-'
+                                . $calendar->timetables[0]->info;
+                    }
+
+                    // Course can have more than one timetable. Add a sequence number to the topicId.
+                    if (get_config(plugin: 'local_attendancewebhook', name: 'compact_calendar')) {
+                        // TopicId is common for all timetables.
+                        $sufix = hash('md5', data: json_encode($calendar));
+                    }
+
                     $topics[] = (object) [
-                        'topicId' => $prefix . '-course-' . $course->id . '-' . $sequence,
                         'name' => $course->shortname,
                         // Only 100 characters.
                         'info' => $info, //substr($course->fullname, 0, 100), // Max 100 chars.
+                        'topicId' => $prefix . '-course-' . $course->id . '-' . $sufix,
                         'externalIntegration' => true,
                         'tag' => 'course',
                         'calendar' => $calendar,
@@ -284,8 +335,6 @@ class course_target extends modattendance_target
                 ];
 
             }
-
-
             // Store in cache.
             if ($cache_ttl > 0) {
                 $cache->set($cachekey, (object) ["data" => $calendars, "time" => time()]);
@@ -453,8 +502,7 @@ class course_target extends modattendance_target
      * @param array  string $jsons
      * @return array sessions structure.
      */
-    static public function parse_course_calendars_pod($course, array $jsons): array
-    {
+    static public function parse_course_calendars_pod($course, array $jsons): array {
         $calendars = [];
         // Fuse json entries.
         $data = [];
@@ -462,51 +510,15 @@ class course_target extends modattendance_target
             $entry = json_decode($jsonentry);
             $data = array_merge($data, $entry??[]);
         }
-      
-        // Iterate grouping in a week.
-        $weekdays = ["L", "M", "X", "J", "V", "S", "D"];
-        $calendars_by_week = [];
-        foreach ($data as $slot) {
-            // Complete fechainicio and fechafin if only has fecha (in exams structure).
-            // "fecha" format is d/m/Y convert to Y-m-d.
-            $fecha = date('Y-m-d', strtotime(str_replace('/', '-', $slot->fecha)));
-            if (!isset($slot->fechaInicio)) {
-                $slot->fechaInicio = $fecha;
-            }
-            if (!isset($slot->fechaFin)) {
-                $slot->fechaFin = $fecha;
-            }
-            $weeknumber = date('W', strtotime($slot->fechaInicio));
-            $weekday = date('N', strtotime($slot->fechaInicio));
-            $timetable = (object)[
-                'weekdays' => $weekdays[$weekday - 1],
-                'startTime' => $slot->horaInicio,
-                'endTime' => $slot->horaFin,
-                "info" => "$slot->nombreGrupo ($slot->nombreUbicacion)",
-            ];
-            if ($calentry = $calendars_by_week[$weeknumber] ?? false) {
-                // Add timetable to existent calentry if not exists.
-                if (!in_array($timetable, $calentry->timetables)) {
-                    $calentry->timetables[] = $timetable;
-                }
-            } else {
-                // Get "monday this week" for $slot->fechaInicio.
-                $startweek = strtotime('monday this week', strtotime($slot->fechaInicio));
-                $startweekdate = date('Y-m-d', $startweek);
-                $endweekdate = date('Y-m-d', strtotime($startweekdate . ' + 6 days'));
-                // Create new entry.
-                $calentry = (object) [
-                    'startDate' => $startweekdate,
-                    'endDate' => $endweekdate,
-                    'timetables' => [$timetable],
-                ];
-                $calendars_by_week[$weeknumber] = $calentry;
-            }
-            ;
+        
+        $calendars = lib::collect_calendars($data,
+                         get_config(plugin: 'local_attendancewebhook', name: 'compact_calendar'));
+        if (get_config(plugin: 'local_attendancewebhook', name: 'compact_calendar')) {
+            $calendars = lib::compress_calendars($calendars);
         }
-        $calendars = lib::compress_calendars($calendars_by_week);
         return $calendars;
     }
+
     /**
      * Parse Json and get course calendar summarizing by course names and dates.
      * Slots came from a REST service.
@@ -515,8 +527,7 @@ class course_target extends modattendance_target
      * @param string $json
      * @return array sessions structure.
      */
-    static public function parse_course_calendars_appcrue($course, $json): array
-    {
+    static public function parse_course_calendars_appcrue($course, $json): array {
         $calendars = [];
         $data = json_decode($json);
         // Course name is followed by a coding in parenthesis that are to be ignored.
@@ -547,8 +558,7 @@ class course_target extends modattendance_target
     /**
      * Strip accents.
      */
-    static public function strip_accents($string): string
-    {
+    static public function strip_accents($string): string {
         return strtr(utf8_decode($string), utf8_decode('áéíóúÁÉÍÓÚüÜ'), 'aeiouAEIOUuU');
     }
 }

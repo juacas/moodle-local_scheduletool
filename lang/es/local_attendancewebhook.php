@@ -87,3 +87,5 @@ $string['logs_enabled_description'] = 'Habilitar o deshabilitar los logs. Los lo
 
 $string['withoutschedule'] = 'Sin información de horario';
 $string['withschedule'] = 'Según horario docente';
+$string['compact_calendar_name'] = 'Comparctar calendario';
+$string['compact_calendar_description'] = 'Compactar calendarios de sesiones usando eventos de repetición con el mismo identificador para todos. Si se desactiva se usará un identificador por sesión.';

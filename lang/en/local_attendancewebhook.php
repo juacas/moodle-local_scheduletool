@@ -111,3 +111,5 @@ $string['logs_enabled_description'] = 'Enable or disable logs. Logs are written 
 
 $string['withoutschedule'] = 'No schedule';
 $string['withschedule'] = 'As in schedule';
+$string['compact_calendar_name'] = 'Compact calendar';
+$string['compact_calendar_description'] = 'Compact calendar representation using repetitive sessions with the same topic id. If disabled, every session is a different topic id .';

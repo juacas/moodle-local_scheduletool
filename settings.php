@@ -240,7 +240,18 @@ if ($hassiteconfig) {
             0
         )
     );
-    // Integration REST services.
+    // Enable calendar compactation.
+    $settings->add(
+            setting: new admin_setting_configcheckbox(
+            name: 'local_attendancewebhook/compact_calendar',
+            visiblename: new lang_string('compact_calendar_name', 'local_attendancewebhook'),
+            description: new lang_string('compact_calendar_description', 'local_attendancewebhook'),
+            defaultsetting: 0
+        )
+    );
+    /********************************
+     * Integration REST services.
+     ********************************/
     $settings->add(
         new admin_setting_heading(
             'local_attendancewebhook/restservices_heading',
@@ -338,7 +349,7 @@ if ($hassiteconfig) {
         )
     );
     $settings->hide_if('local_attendancewebhook/restservices_getUserData', 'local_attendancewebhook/restservices_enabled', 'notchecked');
-    // Enter a list of enndpoints line by line for closeEvent endpoint.
+    // Enter a list of endpoints line by line for closeEvent endpoint.
     $settings->add(
         new admin_setting_configtextarea(
             'local_attendancewebhook/restservices_closeEvent',
