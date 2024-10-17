@@ -70,6 +70,16 @@ class course_target extends modattendance_target
         $sufix = $matches[5] ?? null;
         $date = $matches[3] ?? null;
         $time = $matches[4] ?? null;
+        // id $sufix starts with '#' is base64 encoded.
+        if ($sufix && substr($sufix, 0, 1) == '#') {
+            $sufix = base64_decode(substr($sufix, 1));
+            // Parse date, time and info.
+            if (preg_match("/^(\d{4}-\d{2}-\d{2})-(\d{2}:\d{2})-(.*)$/", $sufix, $matches)) {
+                $date = $matches[1];
+                $time = $matches[2];
+                $sufix = $matches[3];
+            }
+        }
         return ['course', $prefix, $courseid, $sufix, $date, $time];
 
         // $topicparts = explode('-', $topicId);
@@ -77,6 +87,46 @@ class course_target extends modattendance_target
         //     throw new \Exception("Invalid course topicId format: {$topicId}");
         // }
         // return ['course', $topicparts[0], $topicparts[2], $topicparts[3] ?? null];
+    }
+    /**
+     * Encode topicId for course.
+     * @param object $calendar
+     * @return array [topicid, info]
+     */
+    public static function encode_topic_id($calendar, $course): array {
+
+        $prefix = get_config( 'local_attendancewebhook', 'restservices_prefix');
+        $sufix = '';
+        // Check if course has a timetable.
+        if (isset($calendar->timetables)) {
+            $info = get_string('withschedule', 'local_attendancewebhook');
+        } else {
+            $info = get_string('withoutschedule', 'local_attendancewebhook');
+        }
+        // If timetable has only one timetable use info from it.
+        if (isset($calendar->timetables) && count($calendar->timetables) == 1) {
+            // Get week number.
+            // $weeknumber = date('W', strtotime($calendar->startDate));
+            // $info = $calendar->timetables[0]->info . get_string('week') . ' ' . $weeknumber;
+            $info = $calendar->timetables[0]->info . ' ' 
+                    . $calendar->startDate . ' '
+                    . $calendar->timetables[0]->startTime;
+            $sufix = $calendar->startDate . '-' 
+                    . $calendar->timetables[0]->startTime . '-'
+                    . $calendar->timetables[0]->info;
+        }
+
+        // Course can have more than one timetable. Add a sequence number to the topicId.
+        if (get_config(plugin: 'local_attendancewebhook', name: 'compact_calendar')) {
+            // TopicId is common for all timetables.
+            $sufix = hash('md5', data: json_encode($calendar));
+        } else {
+            // encode base 64 to avoid special characters.
+            $sufix = '#' . base64_encode(substr($sufix, 0, 60));
+        }
+        $topicid = $prefix . '-course-' . $course->id . '-' . $sufix;
+
+        return [$topicid, $info];
     }
     /**
      * Search a session with the same opening time. If not found, create a new one.
@@ -243,7 +293,6 @@ class course_target extends modattendance_target
         if (empty($courses)) {
             return $topics;
         }
-        $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
 
         foreach ($courses as $course) {
             // Get course data.
@@ -260,36 +309,14 @@ class course_target extends modattendance_target
 
                 $calendars = self::get_course_calendars($course, $user);
                 foreach ($calendars as $calendar) {
-                    // Check if course has a timetable.
-                    if (isset($calendar->timetables)) {
-                        $info = get_string('withschedule', 'local_attendancewebhook');
-                    } else {
-                        $info = get_string('withoutschedule', 'local_attendancewebhook');
-                    }
-                    // If timetable has only one timetable use info from it.
-                    if (isset($calendar->timetables) && count($calendar->timetables) == 1) {
-                        // Get week number.
-                        // $weeknumber = date('W', strtotime($calendar->startDate));
-                        // $info = $calendar->timetables[0]->info . get_string('week') . ' ' . $weeknumber;
-                        $info = $calendar->timetables[0]->info . ' ' 
-                                . $calendar->startDate . ' '
-                                . $calendar->timetables[0]->startTime;
-                        $sufix = $calendar->startDate . '-' 
-                                . $calendar->timetables[0]->startTime . '-'
-                                . $calendar->timetables[0]->info;
-                    }
-
-                    // Course can have more than one timetable. Add a sequence number to the topicId.
-                    if (get_config(plugin: 'local_attendancewebhook', name: 'compact_calendar')) {
-                        // TopicId is common for all timetables.
-                        $sufix = hash('md5', data: json_encode($calendar));
-                    }
+                    
+                    [$topicid, $info] = self::encode_topic_id($calendar, $course);
 
                     $topics[] = (object) [
                         'name' => $course->shortname,
                         // Only 100 characters.
                         'info' => $info, //substr($course->fullname, 0, 100), // Max 100 chars.
-                        'topicId' => substr($prefix . '-course-' . $course->id . '-' . $sufix, 0, 100),
+                        'topicId' => $topicid,
                         'externalIntegration' => true,
                         'tag' => 'course',
                         'calendar' => $calendar,
