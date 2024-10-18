@@ -31,15 +31,23 @@ require_once(__DIR__ . '/../../config.php');
 
 
 // Params.
-$cmid = required_param('cmid', PARAM_INT);
+$cmid = optional_param('cmid', null, PARAM_INT);
+$courseid = optional_param('course', null, PARAM_INT);
 
-list($course, $cm) = get_course_and_cm_from_cmid($cmid, 'attendance');
+if ($courseid) {
+    $course = get_course($courseid);
+    $cm = null;
+    $context = context_course::instance($course->id);
+} else {
+    list($course, $cm) = get_course_and_cm_from_cmid($cmid, 'attendance');
+    $context = context_module::instance($cm->id);
+}
+
 require_course_login($course, true, $cm);
-$context = context_module::instance($cmid);
 require_capability('mod/attendance:addinstance', $context);
 
-$PAGE->set_url(new moodle_url('/local/attendancewebhook/add_sessions.php', ['cmid' => $cmid]));
-//$PAGE->set_context($context);
+$PAGE->set_url(new moodle_url('/local/attendancewebhook/add_sessions.php', ['cmid' => $cmid, 'course' => $courseid]));
+$PAGE->set_context($context);
 $PAGE->set_title(get_string('copy_schedule', 'local_attendancewebhook'));
 $PAGE->set_heading(get_string('copy_schedule', 'local_attendancewebhook'));
 $PAGE->set_pagelayout('standard');
@@ -66,7 +74,7 @@ if ($form->is_cancelled()) {
             $calendar = json_decode(base64_decode($key));
 
             // If instance has static idnumber set use course_target else attendance_target.
-            if ($cm->idnumber === local_attendancewebhook\lib::CM_IDNUMBER && $cm->deletioninprogress === 0) {
+            if ($cm == null || ($cm->idnumber === local_attendancewebhook\lib::CM_IDNUMBER && $cm->deletioninprogress === 0)) {
                 list($topicid) = course_target::encode_topic_id($calendar, $course);
             } else {
                 // Null sesion

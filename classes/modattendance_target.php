@@ -88,6 +88,12 @@ class modattendance_target extends target_base
         }
         return $sessions;
     }
+    /**
+     * Adda new session to the attendance activity.
+     * @param mixed $opening_time override the event opening time.
+     * @param mixed $description override the event description.
+     * @return int
+     */
     public function create_session($opening_time = null, $description = null)
     {
         if ($opening_time == null) {

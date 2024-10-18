@@ -157,9 +157,9 @@ class course_target extends modattendance_target
                 lib::log_info("Attendance session {$session->id} selected for update.");
             } else {
                 // Create a new session.
-                $this->sessionid = $this->create_session($opening_time, $description);
+                $this->sessionid = $this->create_session();
                 
-                lib::log_info('Attendance session created: ' . json_encode($session));
+                lib::log_info('Attendance session created: ' . $this->sessionid );
             }
         }
         return parent::get_session();

@@ -39,6 +39,8 @@ class add_sessions_form extends moodleform
         $mform = $this->_form;
         $mform->addElement('hidden', 'cmid', $this->_customdata['cmid']);
         $mform->setType('cmid', PARAM_INT);
+        $mform->addElement('hidden', 'course', $this->_customdata['course']->id);
+        $mform->setType('course', PARAM_INT);
         $mform->addElement('date_selector', 'fromdate', get_string('from'));
         $mform->addElement('date_selector', 'todate', get_string('to'));
         $mform->addElement('submit', 'submit', get_string('copy_schedule', 'local_attendancewebhook'));

@@ -16,7 +16,20 @@ function local_attendancewebhook_extend_settings_navigation(settings_navigation 
     if (!$copy_schedule_enabled) {
         return;
     }
-    // Check acctivity type.
+    // Check if its a course context.
+    if ($context instanceof core\context\course) {
+        $menuentrytext = get_string('copy_schedule', 'local_attendancewebhook');
+        $url = new \moodle_url('/local/attendancewebhook/add_sessions.php',
+            ['course' => $context->instanceid]);
+        $modulesettings = $settings->get('courseadmin');
+        if ($modulesettings) {
+            $modulesettings->add($menuentrytext, $url, 
+                    navigation_node::TYPE_CUSTOM, null, 'attendance_hook');
+        }
+
+        return;
+    }
+    // Check activity type.
     $id = $context->instanceid;
     $cm = get_coursemodule_from_id('attendance', $id);
     if (!$cm) {
