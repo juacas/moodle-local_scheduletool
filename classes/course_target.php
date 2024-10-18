@@ -59,7 +59,7 @@ class course_target extends modattendance_target
     {
         // Format is "prefix-course-courseid-Y-m-d-h:m-info"
         // or "prefix-course-courseid-sufix"
-        // Use regex to parse topicId.
+        // if suffix starts with '#' is base64 encoded and contains Y-m-d-h:m-info.
         $regex = "/^(\w+)-course-(\d+)-(?:(\d{4}-\d{2}-\d{2})-(\d{2}:\d{2})-)?(.*)$/";
         if (!preg_match($regex, $topicId, $matches)) {
             throw new \Exception("Invalid course topicId format: {$topicId}");
@@ -70,7 +70,7 @@ class course_target extends modattendance_target
         $sufix = $matches[5] ?? null;
         $date = $matches[3] ?? null;
         $time = $matches[4] ?? null;
-        // id $sufix starts with '#' is base64 encoded.
+        // If $sufix starts with '#' is base64 encoded.
         if ($sufix && substr($sufix, 0, 1) == '#') {
             $sufix = base64_decode(substr($sufix, 1));
             // Parse date, time and info.
@@ -91,9 +91,11 @@ class course_target extends modattendance_target
     /**
      * Encode topicId for course.
      * @param object $calendar
+     * @param object $course
+     * @param object $unused
      * @return array [topicid, info]
      */
-    public static function encode_topic_id($calendar, $course): array {
+    public static function encode_topic_id($calendar, $course, $unused = null): array {
 
         $prefix = get_config( 'local_attendancewebhook', 'restservices_prefix');
         $sufix = '';
@@ -111,9 +113,10 @@ class course_target extends modattendance_target
             $info = $calendar->timetables[0]->info . ' ' 
                     . $calendar->startDate . ' '
                     . $calendar->timetables[0]->startTime;
+            $truncatedinfo = substr($info, 0, 50);
             $sufix = $calendar->startDate . '-' 
                     . $calendar->timetables[0]->startTime . '-'
-                    . $calendar->timetables[0]->info;
+                    . $truncatedinfo;
         }
 
         // Course can have more than one timetable. Add a sequence number to the topicId.
@@ -122,7 +125,7 @@ class course_target extends modattendance_target
             $sufix = hash('md5', data: json_encode($calendar));
         } else {
             // encode base 64 to avoid special characters.
-            $sufix = '#' . base64_encode(substr($sufix, 0, 60));
+            $sufix = '#' . base64_encode($sufix);
         }
         $topicid = $prefix . '-course-' . $course->id . '-' . $sufix;
 
@@ -137,26 +140,9 @@ class course_target extends modattendance_target
     {
         // Check configuration and fix statuses.
         $this->check_configuration();
-        // Find a session with the same opening time.
-        global $DB;
-        $description = null;
         [$type, $prefix, $courseid, $sufix, $date, $time] = self::parse_topic_id($this->event->getTopic()->get_topic_id());
-        if ($date == false || $time == false) {
-            // This event is not matched to schedule.
-            $opening_time = $this->event->get_opening_time();
-            $description = $this->event->get_event_note();
-            $params = ['attendanceid' => $this->cm->instance, 'sessdate' => $opening_time];
-            $sessions = $DB->get_records('attendance_sessions', $params);
-        } else {
-            $opening_time = strtotime($date . ' ' . $time); // Instead of $this->event->get_opening_time() to match schedule.
-            $description = $sufix;
-            $params = ['attendanceid' => $this->cm->instance,
-                        'sessdate' => $opening_time, 
-                        'description' => $sufix];
-            // Get session by date and description.
-            $wheresql = 'attendanceid = :attendanceid AND sessdate = :sessdate AND ' . $DB->sql_compare_text('description') . ' = :description';
-            $sessions = $DB->get_records_select('attendance_sessions', $wheresql, $params);
-        }
+
+        $sessions = $this->search_sessions($sufix, $date, $time);
 
         $message = count($sessions) . ' attendance session(s) ' . json_encode($sessions) . ' found.';
         if (count($sessions) > 1) {
@@ -170,26 +156,9 @@ class course_target extends modattendance_target
                 $this->sessionid = $session->id;
                 lib::log_info("Attendance session {$session->id} selected for update.");
             } else {
-                $session = new \stdClass();
-                $session->sessdate = $opening_time;
-                $session->duration = $this->event->get_closing_time() == null ? 3600 : $this->event->get_closing_time() - $this->event->get_opening_time();
-                $session->groupid = 0;
-                $session->description = $description;
-                $session->descriptionitemid = -1;
-                $session->descriptionformat = FORMAT_PLAIN;
-                $session->calendarevent = 0; // Disable calendar event creation.
-                $session->timemodified = time();
-                $session->statusset = 0;
-                $session->absenteereport = 1;
-
-                $session->studentscanmark = 1; // Allow students to mark their own attendance.
-                $session->rotateqrcode = 1; // Use a rotating QR code.
-                $session->rotateqrcodesecret = attendance_random_string();
-                $session->studentpassword = attendance_random_string();
-
-                $sessid = $this->att_struct->add_session($session);
-                $this->sessionid = $sessid;
-
+                // Create a new session.
+                $this->sessionid = $this->create_session($opening_time, $description);
+                
                 lib::log_info('Attendance session created: ' . json_encode($session));
             }
         }
@@ -346,7 +315,7 @@ class course_target extends modattendance_target
         } else {
             // Get this monday.
             $this_monday = strtotime('monday this week');
-            $toDate = strtotime('+28 days', $this_monday);
+            $toDate = strtotime('+28 days', $this_monday); // TODO: pass as parameter.
            
             $results = self::get_schedule_for_course($course, $this_monday, $toDate);
             $calendars = self::parse_course_calendars_pod($course, $results);

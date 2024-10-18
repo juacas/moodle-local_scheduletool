@@ -40,6 +40,9 @@ abstract class target_base
     {
         $this->config = $config;
         $this->event = $event;
+        if ($event == null) {
+            return;
+        }
         $topicId = $event->getTopic()->get_topic_id();
 
         $this->setup_from_topic_id($topicId);
@@ -91,6 +94,7 @@ abstract class target_base
         $sessionid = $topicparts[3] ?? null;
         return [$type, $prefix, $cmid, $sessionid];
     }
+
     /**
      * Set de coursemodule. Load the coursemodule and the context.
      * @param mixed|\cm_info|\stdClass $cm id or cm object

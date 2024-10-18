@@ -18,7 +18,7 @@ namespace local_attendancewebhook;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once ($CFG->dirroot . '/mod/attendance/locallib.php');
+require_once($CFG->dirroot . '/mod/attendance/locallib.php');
 /**
  * Class to implement entities that can be targets of attendance marking.
  */
@@ -30,6 +30,11 @@ class modattendance_target extends target_base
         parent::__construct($event, $config);
         $this->load_modattendance();
     }
+    function setup_from_topic_id(string $topicId)
+    {
+        parent::setup_from_topic_id($topicId);
+
+    }
     protected function load_modattendance()
     {
         global $DB;
@@ -40,10 +45,76 @@ class modattendance_target extends target_base
     }
     public function get_session()
     {
-        $this->att_struct->pageparams = (object) ["sessionid" => $this->sessionid,
-                                            "grouptype" => 0]; // Patch attendance structure.
+        if ($this->sessionid == null) {
+            // Search compatible session by event contents.
+            $sessions = $this->search_sessions();
+            if (count($sessions) > 0) {
+                $this->sessionid = reset($sessions)->id;
+            } else {
+                $this->sessionid = $this->create_session();
+            }
+        }
+
+        $this->att_struct->pageparams = (object) [
+            "sessionid" => $this->sessionid,
+            "grouptype" => 0
+        ]; // Patch attendance structure.
 
         return $this->att_struct->get_session_info($this->sessionid);
+    }
+    /**
+     * Find a session with the same opening time, cmid, description, etc.
+     * @return array sessions
+     */
+    public function search_sessions($description = null, $date = null, $time = null): array
+    {
+        global $DB;
+        if ($date == false || $time == false) {
+            // This event is not matched to an schedule.
+            $opening_time = $this->event->get_opening_time();
+            $description = $this->event->get_event_note();
+            $params = ['attendanceid' => $this->cm->instance, 'sessdate' => $opening_time];
+            $sessions = $DB->get_records('attendance_sessions', $params);
+        } else {
+            $opening_time = strtotime($date . ' ' . $time); // Instead of $this->event->get_opening_time() to match schedule.
+            $params = [
+                'attendanceid' => $this->cm->instance,
+                'sessdate' => $opening_time,
+                'description' => $description
+            ];
+            // Get session by date and description.
+            $wheresql = 'attendanceid = :attendanceid AND sessdate = :sessdate AND ' . $DB->sql_compare_text('description') . ' = :description';
+            $sessions = $DB->get_records_select('attendance_sessions', $wheresql, $params);
+        }
+        return $sessions;
+    }
+    public function create_session($opening_time = null, $description = null)
+    {
+        if ($opening_time == null) {
+            $opening_time = $this->event->get_opening_time();
+        }
+        if ($description == null) {
+            $description = $this->event->get_event_note();
+        }
+        $session = new \stdClass();
+        $session->sessdate = $opening_time;
+        $session->duration = $this->event->get_closing_time() == null ? 3600 : $this->event->get_closing_time() - $this->event->get_opening_time();
+        $session->groupid = 0;
+        $session->description = $description;
+        $session->descriptionitemid = -1;
+        $session->descriptionformat = FORMAT_PLAIN;
+        $session->calendarevent = 0; // Disable calendar event creation.
+        $session->timemodified = time();
+        $session->statusset = 0;
+        $session->absenteereport = 1;
+
+        $session->studentscanmark = 1; // Allow students to mark their own attendance.
+        $session->rotateqrcode = 1; // Use a rotating QR code.
+        $session->rotateqrcodesecret = attendance_random_string();
+        $session->studentpassword = attendance_random_string();
+
+        $sessid = $this->att_struct->add_session($session);
+        return $sessid;
     }
     /**
      * Check configuration and fix statuses.
@@ -52,7 +123,7 @@ class modattendance_target extends target_base
     {
         // Get statuses configured in the attendance activity.
         $statuses = $this->att_struct->get_statuses();
-        
+
         // Check if lib::STATUS_DESCRIPTIONS and STATUS_ACRONYMS are configured.
         foreach (lib::STATUS_ACRONYMS as $sourcestatus => $acronym) {
             foreach ($statuses as $status) {
@@ -68,7 +139,7 @@ class modattendance_target extends target_base
             $newstatus->description = lib::STATUS_DESCRIPTIONS[$sourcestatus];
             $newstatus->grade = ($sourcestatus == 'NOTPRESENT') ? 0 : 1;
             $newstatus->setnumber = 0;
-            $newstatus->studentavailability = ($sourcestatus == 'UNKNOWN' || $sourcestatus == 'NOTPRESENT')? 0 : 15; // 15 minutes for manual marking.
+            $newstatus->studentavailability = ($sourcestatus == 'UNKNOWN' || $sourcestatus == 'NOTPRESENT') ? 0 : 15; // 15 minutes for manual marking.
 
             attendance_add_status($newstatus);
             if ($sourcestatus == 'NOTPRESENT') {
@@ -91,7 +162,7 @@ class modattendance_target extends target_base
         if (!$user) {
             if (!\local_attendancewebhook\lib::is_tempusers_enabled($this->config)) {
                 $msg = get_string('notifications_user_unknown_notmarked', 'local_attendancewebhook', $member);
-                
+
                 lib::log_error($msg);
                 $this->errors[] = $msg;
                 return;
@@ -170,12 +241,13 @@ class modattendance_target extends target_base
                 // Create info text from dates.
                 $description = content_to_text($session->description, FORMAT_MOODLE);
                 $info = substr("{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')', 0, 100);
-                $topics[] = (object)[
-                    'topicId' => $prefix . '-attendance-' . $cm->id . '-' . $session->id,
+                $topicid = self::encode_topic_id($prefix, $cm->id, $session->id);
+                $topics[] = (object) [
+                    'topicId' => $topicid,
                     'name' => $att->name . " - " . $description,
                     'info' => $info, // Max 100 chars.
                     'externalIntegration' => true,
-                    'tag' => substr("{$course->shortname}/{$att->name}",0, 100), // Max 100 chars.
+                    'tag' => substr("{$course->shortname}/{$att->name}", 0, 100), // Max 100 chars.
                     'calendar' => self::get_single_day_calendar($session, $info),
                 ];
             }
@@ -188,19 +260,19 @@ class modattendance_target extends target_base
      * @param string $info
      * @return object calendar structure.
      */
-    static public function get_single_day_calendar(\stdClass $session, string $info): object {
-        $days = ["L", "M", "X", "J", "V", "S", "D"];
-        
+    static public function get_single_day_calendar(\stdClass $session, string $info): object
+    {
+
         return (object) [
             // format: 2021-09-01
             'startDate' => date('Y-m-d', $session->sessdate),
             'endDate' => date('Y-m-d', $session->sessdate + $session->duration),
             'timetables' => [
                 [
-                 'weekday' => $days[date('N', $session->sessdate)-1], 
-                 'startTime' => date('H:i', $session->sessdate), 
-                 'endTime' => date('H:i', $session->sessdate + $session->duration),
-                 "info" => $info, // Max 100 chars.
+                    'weekdays' => lib::WEEK_DAYS[date('N', $session->sessdate) - 1],
+                    'startTime' => date('H:i', $session->sessdate),
+                    'endTime' => date('H:i', $session->sessdate + $session->duration),
+                    "info" => $info, // Max 100 chars.
                 ]
             ]
         ];
@@ -211,11 +283,12 @@ class modattendance_target extends target_base
      * @param mixed $attendance
      * @return mixed
      */
-    public function get_status( $attendance) {
+    public function get_status($attendance)
+    {
         global $DB;
         $params = array('attendanceid' => $this->cm->instance, 'description' => lib::STATUS_DESCRIPTIONS[$attendance->get_mode()]);
         $statuses = $DB->get_records('attendance_statuses', $params);
-        $message = count($statuses).' attendance statuses '.json_encode($params).' found.';
+        $message = count($statuses) . ' attendance statuses ' . json_encode($params) . ' found.';
         if (count($statuses) != 1) {
             lib::log_error($message);
             return false;
@@ -224,5 +297,16 @@ class modattendance_target extends target_base
             return reset($statuses);
         }
     }
-
+    /**
+     * Encode topic id.
+     * @param string $type
+     * @param \stdClass $cm
+     * @param int $sessid
+     * @return array with topicid and info.
+     */
+    public static function encode_topic_id($calendar, $cmid, $sessionid): array
+    {
+        $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
+        return [$prefix . '-attendance-' . $cmid . '-' . $sessionid, $calendar->timetables[0]->info];
+    }
 }

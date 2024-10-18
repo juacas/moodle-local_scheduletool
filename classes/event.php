@@ -31,9 +31,18 @@ class event {
     private $attendances;
     private $source;
 
-    public function __construct($json) {
-        $this->source = $json;
-        $object = json_decode($json);
+    public function __construct($json = null) {
+        if ($json === null) {
+            return;
+        }
+        if (is_object($json)) {
+            $this->source = json_encode($json);
+            $object = $json;
+        }
+        if (is_string($json)) {
+            $this->source = $json;
+            $object = json_decode($json);
+        }
         if (!is_object($object)) {
             throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
         }

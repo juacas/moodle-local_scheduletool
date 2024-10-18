@@ -24,7 +24,7 @@ require_once($CFG->dirroot . '/user/lib.php');
 
 class lib
 {
-
+    const WEEK_DAYS = ["L", "M", "X", "J", "V", "S", "D"];
     const CM_IDNUMBER = 'local_attendancewebhook';
     // TODO: i18n status descriptions.
     const STATUS_DESCRIPTIONS = array(
@@ -35,7 +35,7 @@ class lib
     );
 
     const STATUS_ACRONYMS = array(
-        'NOTPRESENT'  => 'NP', 
+        'NOTPRESENT' => 'NP',
         'UNKNOWN' => 'AS',
         'ON_SITE' => 'PR',
         'DISTANCE' => 'DS'
@@ -112,7 +112,7 @@ class lib
             return $courses[array_keys($courses)[0]];
         }
     }
-   
+
     public static function get_user_enrol($config, $member, $course)
     {
         global $DB;
@@ -265,15 +265,16 @@ class lib
             $message->courseid = $courseid;
             $message->userto = $user; // TODO: $user->lang should set the language.
             $message->name = 'notification'; // Provider local_attendancewebhook/notification. It's the only one declared.
-            
+
             $eventstr = strval($event);
-            $a = (object) ['event' => $event,
-                            'module' => $config->module_name,
-                            'topic' => $event->getTopic(),
-                            'opening_time' => date('d-m-Y H:i', $event->get_opening_time()),
-                            'closing_time' => date('d-m-Y H:i', $event->get_closing_time()),
-                            'eventstr' => $eventstr,
-                        ];
+            $a = (object) [
+                'event' => $event,
+                'module' => $config->module_name,
+                'topic' => $event->getTopic(),
+                'opening_time' => date('d-m-Y H:i', $event->get_opening_time()),
+                'closing_time' => date('d-m-Y H:i', $event->get_closing_time()),
+                'eventstr' => $eventstr,
+            ];
 
             $message->subject = get_string('notification_subject', 'local_attendancewebhook', $a);
             if ($level == \core\output\notification::NOTIFY_ERROR) {
@@ -287,7 +288,7 @@ class lib
                 $text = get_string('notification_info', 'local_attendancewebhook', $a);
                 $admintext = '';
             }
-            
+
             $message->fullmessage = "{$text}\n";
             $message->fullmessagehtml = "<p>{$text}</p>";
             if ($attendances) {
@@ -299,7 +300,7 @@ class lib
                 }
                 //$message->fullmessage = substr($message->fullmessage, 0, strlen($message->fullmessage) - 1);
             }
-            
+
             $message->fullmessage .= "{$admintext}\n";
             $message->fullmessagehtml .= "<p>$admintext </p>";
             $message->fullmessageformat = FORMAT_HTML;
@@ -332,7 +333,7 @@ class lib
         $cache_ttl = get_config('local_attendancewebhook', 'local_caches_ttl');
         // Use cache.
         $cache = \cache::make('local_attendancewebhook', 'user_topics');
-        $cachekey =  "user_topic_{$user->id}";
+        $cachekey = "user_topic_{$user->id}";
         if ($cache_ttl > 0 && $cached_topic = $cache->get($cachekey)) {
             // Check lifetime.
             if ($cached_topic->time > (time() - $cache_ttl)) {
@@ -367,7 +368,7 @@ class lib
         // Use remote topics cache.
         $cache_ttl = get_config('local_attendancewebhook', 'remote_caches_ttl');
         $cache = \cache::make('local_attendancewebhook', 'user_topics');
-        $cachekey =  "remote_user_topic_{$userid}";
+        $cachekey = "remote_user_topic_{$userid}";
         if ($cache_ttl > 0 && $cached_topic = $cache->get($cachekey)) {
             // Check lifetime. 1800 seconds for remote topics.
             if ($cached_topic->time > (time() - $cache_ttl)) {
@@ -460,7 +461,7 @@ class lib
         } else {
             $nia = $user->$NIAField;
         }
-// Roles are:
+        // Roles are:
 // ORGANISER: users with capability to mod/attendance:takeattendances in any allowed course.
 // ATTENDEE: users without it.
 // TODO: Check mod/hybridteaching:createsessions
@@ -473,7 +474,7 @@ class lib
             });
             if (count($attendancecourses) > 0) {
                 $user->rol = 'ORGANISER';
-            } 
+            }
         }
 
         $userresponse = [
@@ -562,7 +563,7 @@ class lib
         $event = \local_attendancewebhook\lib::get_attendance_event();
         return self::process_register_attendance_with_proxys($event, $remotes);
     }
-     /**
+    /**
      * Process add_session, CloseEvent request.
      * @return bool|array True if success. Array of errors otherwise.
      */
@@ -579,11 +580,12 @@ class lib
      * @see \local_attendancewebhook\lib::get_remotes
      * @return bool|array True if success. Array of errors otherwise.
      */
-    public static function process_register_attendance_with_proxys($event, $remotes) {
+    public static function process_register_attendance_with_proxys($event, $remotes)
+    {
         if (!$event) {
             return false;
         }
-        
+
         $config = \local_attendancewebhook\lib::get_config();
         if (!$config) {
             return false;
@@ -592,7 +594,7 @@ class lib
 
         try {
             $errors = [];
-           
+
             // If Rest services are enabled, check topicId format.
             if ($config->restservices_enabled) {
                 global $DB, $CFG, $USER;
@@ -654,7 +656,7 @@ class lib
         }
 
         if (count($errors) > 0) {
-            $courseid = $att_target ? $att_target->getCourse()->id??0: 0;
+            $courseid = $att_target ? $att_target->getCourse()->id ?? 0 : 0;
             lib::log_error($errors);
             \local_attendancewebhook\lib::notify($config, $event, $courseid, \core\output\notification::NOTIFY_ERROR, $errors);
             // One error means that the attendance was not saved.
@@ -663,7 +665,7 @@ class lib
             return true;
         }
     }
-   
+
 
     //     global $CFG;
     //     try {
@@ -760,12 +762,13 @@ class lib
      * Get disallowed course categories.
      * @return bool|array of disallowed category ids. True if all categories are allowed.
      */
-    public static function get_disallowed_categories() {
+    public static function get_disallowed_categories()
+    {
 
         if (self::$disallowed_categories === null) {
             $categories = get_config('local_attendancewebhook', 'disableincategories');
             self::$disallowed_categories = lib::get_fulltree_categories($categories);
-        } 
+        }
         return self::$disallowed_categories;
     }
     /**
@@ -774,7 +777,8 @@ class lib
      * @param string $categories ids of categories separated by commas.
      * @return array of category ids.
      */
-    public static function get_fulltree_categories(string $categories) {
+    public static function get_fulltree_categories(string $categories)
+    {
         if (!empty($categories)) {
             $categories = explode(',', $categories);
             // $categories = array_map('intval', $categories);
@@ -811,13 +815,13 @@ class lib
             return false;
         }
         // Get disallowed categories.
-        $disalloedcategories =  \local_attendancewebhook\lib::get_disallowed_categories();
-        if ( count($disalloedcategories) > 0 && in_array($course->category, $disalloedcategories)) {
+        $disalloedcategories = \local_attendancewebhook\lib::get_disallowed_categories();
+        if (count($disalloedcategories) > 0 && in_array($course->category, $disalloedcategories)) {
             return false;
         }
         // Get allowed categories.
         $categories = \local_attendancewebhook\lib::get_allowed_categories();
-        if ( count($categories) > 0  && in_array($course->category, $categories)) {
+        if (count($categories) > 0 && in_array($course->category, $categories)) {
             return $course;
         } else {
             return false;
@@ -828,14 +832,15 @@ class lib
      * @param \stdClass $course
      * @return array 
      */
-    public static function get_schedule_equivalent_courses($course) : array {
+    public static function get_schedule_equivalent_courses($course): array
+    {
         // Get role method type meta.
         global $DB;
         $redirected = [];
         $metalinked = $DB->get_records('enrol', array('courseid' => $course->id, 'enrol' => 'meta'), 'customint1', 'customint1');
         if (!empty($metalinked)) {
             // Search courses in the meta linked list that has "redirected" format.
-            $redirected = $DB->get_records_list('course', 'id',  array_keys($metalinked), 'id');
+            $redirected = $DB->get_records_list('course', 'id', array_keys($metalinked), 'id');
             $redirected = array_filter($redirected, function ($course) {
                 return $course->format == 'redirected';
             });
@@ -861,60 +866,62 @@ class lib
      * @param bool $collectbyweek if true, group by week.
      * @return array of calendar events grouped by week. key is week number. value is an object with timetable structure.
      */
-    public static function collect_calendars($data, $collectbyweek = false): array {
-         // Iterate grouping in a week.
-         $weekdays = ["L", "M", "X", "J", "V", "S", "D"];
-         $calendars_by_week = [];
-         foreach ($data as $slot) {
-             // Complete fechainicio and fechafin if only has fecha (in exams structure).
-             // "fecha" format is d/m/Y convert to Y-m-d.
-             $fecha = date('Y-m-d', strtotime(str_replace('/', '-', $slot->fecha)));
-             if (!isset($slot->fechaInicio)) {
-                 $slot->fechaInicio = $fecha;
-             }
-             if (!isset($slot->fechaFin)) {
-                 $slot->fechaFin = $fecha;
-             }
-             $weeknumber = date('W', strtotime($slot->fechaInicio));
-             $weekday = date('N', strtotime($slot->fechaInicio));
-             $timetable = (object)[
-                 'weekdays' => $weekdays[$weekday - 1],
-                 'startTime' => $slot->horaInicio,
-                 'endTime' => $slot->horaFin,
-                 "info" => "$slot->nombreGrupo ($slot->nombreUbicacion)",
-             ];
+    public static function collect_calendars($data, $collectbyweek = false): array
+    {
+        // Iterate grouping in a week.
+        $weekdays = ["L", "M", "X", "J", "V", "S", "D"];
+        $calendars_by_week = [];
+        foreach ($data as $slot) {
+            // Complete fechainicio and fechafin if only has fecha (in exams structure).
+            // "fecha" format is d/m/Y convert to Y-m-d.
+            $fecha = date('Y-m-d', strtotime(str_replace('/', '-', $slot->fecha)));
+            if (!isset($slot->fechaInicio)) {
+                $slot->fechaInicio = $fecha;
+            }
+            if (!isset($slot->fechaFin)) {
+                $slot->fechaFin = $fecha;
+            }
+            $weeknumber = date('W', strtotime($slot->fechaInicio));
+            $weekday = date('N', strtotime($slot->fechaInicio));
+            $timetable = (object) [
+                'weekdays' => $weekdays[$weekday - 1],
+                'startTime' => $slot->horaInicio,
+                'endTime' => $slot->horaFin,
+                "info" => "$slot->nombreGrupo ($slot->nombreUbicacion)",
+            ];
 
-             if ($collectbyweek && $calentry = $calendars_by_week[$weeknumber] ?? false) {
-                 // Add timetable to existent calentry if not exists.
-                 if (!in_array($timetable, $calentry->timetables)) {
-                     $calentry->timetables[] = $timetable;
-                 }
-             } else {
-                 // Get "monday this week" for $slot->fechaInicio.
-                 $startweek = strtotime('monday this week', strtotime($slot->fechaInicio));
-                 $startweekdate = date('Y-m-d', $startweek);
-                 $endweekdate = date('Y-m-d', strtotime($startweekdate . ' + 6 days'));
-                 // Create new entry.
-                 $calentry = (object) [
-                     'startDate' => $startweekdate,
-                     'endDate' => $endweekdate,
-                     'timetables' => [$timetable],
-                 ];
-                 
-                 if ($collectbyweek) {
+            if ($collectbyweek && $calentry = $calendars_by_week[$weeknumber] ?? false) {
+                // Add timetable to existent calentry if not exists.
+                if (!in_array($timetable, $calentry->timetables)) {
+                    $calentry->timetables[] = $timetable;
+                }
+            } else {
+                // Get "monday this week" for $slot->fechaInicio.
+                $startweek = strtotime('monday this week', strtotime($slot->fechaInicio));
+                $startweekdate = date('Y-m-d', $startweek);
+                $endweekdate = date('Y-m-d', strtotime($startweekdate . ' + 6 days'));
+                // Create new entry.
+                $calentry = (object) [
+                    'startDate' => $startweekdate,
+                    'endDate' => $endweekdate,
+                    'timetables' => [$timetable],
+                ];
+
+                if ($collectbyweek) {
                     $calendars_by_week[$weeknumber] = $calentry;
-                 } else {
+                } else {
                     $calendars_by_week[] = $calentry;
-                 }
-             }
-         }
-         return $calendars_by_week;
+                }
+            }
+        }
+        return $calendars_by_week;
     }
     /**
      * Compress calendars by grouping consecutive weeks with the same timetable.
      * @param array $calendars ordered by startdate. All calendars starts on monday and ends in next sunday.
      */
-    public static function compress_calendars($calendars_by_week) {
+    public static function compress_calendars($calendars_by_week)
+    {
         // Fuse identical weeks. Assume array is ordered by week.
         $calendars = [];
         $lastcalentry = null;
@@ -925,9 +932,11 @@ class lib
             $week = key($calendars_by_week);
             unset($calendars_by_week[$week]);
 
-            if ($lastcalentry && 
-                $week == $lastcalentryweek+1 &&
-                $calentry->timetables == $lastcalentry->timetables) {
+            if (
+                $lastcalentry &&
+                $week == $lastcalentryweek + 1 &&
+                $calentry->timetables == $lastcalentry->timetables
+            ) {
                 $lastcalentry->endDate = $calentry->endDate;
             } else {
                 $calendars[$week] = $calentry;
@@ -943,8 +952,8 @@ class lib
                 // Seach in timetables.
                 $same = current(array_filter($timetables, function ($t) use ($timetable) {
                     return $t->startTime == $timetable->startTime &&
-                            $t->endTime == $timetable->endTime &&
-                            $t->info == $timetable->info;
+                        $t->endTime == $timetable->endTime &&
+                        $t->info == $timetable->info;
                 }));
                 if ($same) {
                     if (!strpos($same->weekdays, $timetable->weekdays)) {
@@ -952,10 +961,48 @@ class lib
                     }
                 } else {
                     $timetables[] = (object) $timetable;
-                }            
+                }
             }
             $calentry->timetables = array_values($timetables);
         }
         return $calendars;
+    }
+    /**
+     * Generate a list of dates from a calendar structure.
+     * iterate by weeks from startdate to enddate generating a datestart and dateend for each weekday.
+     * @param mixed $calendar
+     * @return void
+     */
+    public static function expand_dates_from_calendar($calendar): array
+    {
+        $dates = [];
+        $start = strtotime($calendar->startDate);
+        $end = strtotime($calendar->endDate);
+
+        $startweek = date('W', $start);
+        $endweek = date('W', $end);
+        for ($week = $startweek; $week <= $endweek; $week++) {
+            $weekstart = strtotime("monday this week", strtotime(date('Y', $start) . 'W' . $week));
+            foreach ($calendar->timetables as $timetable) {
+                $weekdays = explode(',', $timetable->weekdays);
+                foreach ($weekdays as $weekday) {
+                    // Translate weekday to strtotime weekday.
+                    $weekday = array_search($weekday, lib::WEEK_DAYS) + 1;
+                    $date = $weekstart + ($weekday - 1) * 86400;
+
+                    if ($date <= $end) {
+                        $dates[] = (object) [
+                            'date' => date('Y-m-d', $date),
+                            'startTime' => $timetable->startTime,
+                            'endTime' => $timetable->endTime,
+                            'info' => $timetable->info,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $dates;
+
     }
 }

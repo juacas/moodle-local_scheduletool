@@ -48,7 +48,7 @@ if ($hassiteconfig) {
                 $attplugin_available
             )
         );
-
+        
         // Checkbox for exporting mod_attendance sessions as topics.
         $settings->add(
             new admin_setting_configcheckbox(
@@ -247,6 +247,15 @@ if ($hassiteconfig) {
             visiblename: new lang_string('compact_calendar_name', 'local_attendancewebhook'),
             description: new lang_string('compact_calendar_description', 'local_attendancewebhook'),
             defaultsetting: 0
+        )
+    );
+    // Enable menu action for copying sessions from schedules.
+    $settings->add(
+        new admin_setting_configcheckbox(
+            'local_attendancewebhook/copy_schedule_enabled',
+            new lang_string('copy_schedule', 'local_attendancewebhook'),
+            new lang_string('copy_schedule_description', 'local_attendancewebhook'),
+            0
         )
     );
     /********************************
