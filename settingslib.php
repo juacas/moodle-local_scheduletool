@@ -60,7 +60,7 @@ class admin_settings_coursecat_multiselect extends admin_setting_configmultisele
         if (is_array($this->choices)) {
             return true;
         }
-        $this->choices = core_course_category::make_categories_list('', 0, ' / ');
+        $this->choices = \core_course_category::make_categories_list('', 0, ' / ');
         return true;
     }
 }

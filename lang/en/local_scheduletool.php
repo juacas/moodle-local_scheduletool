@@ -35,7 +35,7 @@ $string['notifications_new_activity'] = 'New attendance module "{$a->activitynam
 $string['notifications_user_unknown_notmarked'] = 'User not found, not marked: {$a}';
 
 $string['pluginname'] = 'Schedule tools';
-$string['privacy:metadata'] = 'Attendance Webhook plugin stores data on behalf of Attendance plugin.';
+$string['privacy:metadata'] = 'Attendance Webhook plugin does not stores personal data.';
 $string['messageprovider:error'] = 'Attendance Webhook notifications error events';
 $string['tempusers_enabled_description'] = 'Enable or disable the creation of temporary users';
 $string['tempusers_enabled_name'] = 'Temporary users';
