@@ -17,13 +17,13 @@
 /**
  * add_session_form. Form to select sessions from course shedules.
  *
- * @package    local_attendancewebhook
+ * @package    local_scheduletool
  * @copyright  2024 University of Valladoild, Spain
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_attendancewebhook\forms;
-use local_attendancewebhook\course_target;
+namespace local_scheduletool\forms;
+use local_scheduletool\course_target;
 use moodleform;
 use moodle_url;
 
@@ -43,13 +43,12 @@ class add_sessions_form extends moodleform
         $mform->setType('course', PARAM_INT);
         $mform->addElement('date_selector', 'fromdate', get_string('from'));
         $mform->addElement('date_selector', 'todate', get_string('to'));
-        $mform->addElement('submit', 'submit', get_string('copy_schedule', 'local_attendancewebhook'));
-        $mform->addElement('cancel', 'cancel', get_string('cancel'));
-
+      
         // Get course calendar.
         $course = $this->_customdata['course'];
         $calendars = course_target::get_course_calendars($course); // TODO: add date range.
         $id = 0;
+       
         // Create a form checkbox for each calendar that has timetables.
         foreach ($calendars as $calendar) {
             if (empty($calendar->timetables)) {
@@ -71,5 +70,11 @@ class add_sessions_form extends moodleform
                 $id++;                
             }
         }
+        if ($id == 0)  {
+            $mform->addElement('html', '<p>' . get_string('no_timetables', 'local_scheduletool') . '</p>');
+        } 
+        $mform->addElement('submit', 'submit', get_string('copy_schedule', 'local_scheduletool'));
+        $mform->addElement('cancel', 'cancel', get_string('cancel'));
+
     }
 }

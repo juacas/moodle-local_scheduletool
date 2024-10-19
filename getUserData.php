@@ -17,18 +17,18 @@
 /**
  * Give user data to the app.
  *
- * @package    local_attendancewebhook
+ * @package    local_scheduletool
  * @copyright  2024 University of Valladoild, Spain
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace local_attendancewebhook;
+namespace local_scheduletool;
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/filelib.php');
 /** @var \moodle_database $DB */
 global $DB;
 
-if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
+if (!get_config('local_scheduletool', 'restservices_enabled')) {
     header('HTTP/1.1 405 Method Not Allowed');
     die();
     // Better act as a service don't throw new moodle_exception('servicedonotexist', 'error').
@@ -46,7 +46,7 @@ $PAGE->set_context(null);
 header('Content-Type: application/json;charset=UTF-8');
 
 // Check apikey and apiuser aginst config.
-if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != get_config('local_attendancewebhook', 'apiuser')) {
+if ($apikey != get_config('local_scheduletool', 'apikey') || $apiuser != get_config('local_scheduletool', 'apiuser')) {
     header('HTTP/1.0 401 Unauthorized');
     die();
 }
@@ -72,13 +72,13 @@ foreach ($remote_user_data as $remote_user) {
 }
 if ($user_data) {
     // Check if user is authorized.
-    $authorized_users = trim(get_config('local_attendancewebhook', 'authorized_users'));
-    if ($authorized_users != '' && !str_contains(get_config('local_attendancewebhook', 'authorized_users'), $user_data->email)) {
+    $authorized_users = trim(get_config('local_scheduletool', 'authorized_users'));
+    if ($authorized_users != '' && !str_contains(get_config('local_scheduletool', 'authorized_users'), $user_data->email)) {
         header('HTTP/1.0 401 Unauthorized');
         die();
     }
     // Get authorized organizers.
-    $authorized_organizers = trim(get_config('local_attendancewebhook', 'authorized_organizers'));
+    $authorized_organizers = trim(get_config('local_scheduletool', 'authorized_organizers'));
     if ($authorized_organizers != '' && !str_contains($authorized_organizers, $user_data->email)) {
         $user_data->rol = 'ATTENDEE';
     }

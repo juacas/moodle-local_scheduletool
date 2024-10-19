@@ -1,6 +1,6 @@
 <?php
-
-class admin_setting_configmultiselect_autocomplete extends admin_setting_configmultiselect {
+namespace local_scheduletool;
+class admin_setting_configmultiselect_autocomplete extends \admin_setting_configmultiselect {
     /** @var boolean $tags Should we allow typing new entries to the field? */
     protected $tags = false;
     /** @var string $ajax Name of an AMD module to send/process ajax requests. */

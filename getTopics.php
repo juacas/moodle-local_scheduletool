@@ -59,18 +59,18 @@
     REST 7
     imparte la asignatura, el departamento, la titulación, etc. Su valor no debe incluir espacios 
     en blanco. Es un parámetro opcional.
- * @package    local_attendancewebhook
+ * @package    local_scheduletool
  * @copyright  2021 University of Valladoild, Spain
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace local_attendancewebhook;
-use local_attendancewebhook_external;
+namespace local_scheduletool;
+use local_scheduletool_external;
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir.'/filelib.php');
 /** @var \moodle_database $DB */
 global $DB;
 
-if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
+if (!get_config('local_scheduletool', 'restservices_enabled')) {
     header('HTTP/1.1 405 Method Not Allowed');
     die();
     // Better act as a service don't throw new moodle_exception('servicedonotexist', 'error').
@@ -88,12 +88,12 @@ $PAGE->set_context(null);
 header('Content-Type: application/json;charset=UTF-8');
 lib::log_info('Request getTopics:' . 'User: ' . $userid . ' Apikey: ' . $apikey . ' Apiuser: ' . $apiuser. '===========================');
 // Check apikey and apiuser aginst config.
-if ($apikey != get_config('local_attendancewebhook', 'apikey') || $apiuser != get_config('local_attendancewebhook', 'apiuser')) {
+if ($apikey != get_config('local_scheduletool', 'apikey') || $apiuser != get_config('local_scheduletool', 'apiuser')) {
     header('HTTP/1.0 401 Unauthorized');
     die();
 }
 // Find userid. TODO: Bypass this check if user is in remotes. Use getUserData()
-$useridfield = get_config('local_attendancewebhook', 'user_id');
+$useridfield = get_config('local_scheduletool', 'user_id');
 $user = $DB->get_record('user', [$useridfield => $userid], '*');
 
 // if (!$user) {

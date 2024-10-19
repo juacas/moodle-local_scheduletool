@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_attendancewebhook;
+namespace local_scheduletool;
 use \Exception;
 use \mod_attendance_structure;
 
@@ -97,13 +97,13 @@ class course_target extends modattendance_target
      */
     public static function encode_topic_id($calendar, $course, $unused = null): array {
 
-        $prefix = get_config( 'local_attendancewebhook', 'restservices_prefix');
+        $prefix = get_config( 'local_scheduletool', 'restservices_prefix');
         $sufix = '';
         // Check if course has a timetable.
         if (isset($calendar->timetables)) {
-            $info = get_string('withschedule', 'local_attendancewebhook');
+            $info = get_string('withschedule', 'local_scheduletool');
         } else {
-            $info = get_string('withoutschedule', 'local_attendancewebhook');
+            $info = get_string('withoutschedule', 'local_scheduletool');
         }
         // If timetable has only one timetable use info from it.
         if (isset($calendar->timetables) && count($calendar->timetables) == 1) {
@@ -120,7 +120,7 @@ class course_target extends modattendance_target
         }
 
         // Course can have more than one timetable. Add a sequence number to the topicId.
-        if (get_config(plugin: 'local_attendancewebhook', name: 'compact_calendar')) {
+        if (get_config(plugin: 'local_scheduletool', name: 'compact_calendar')) {
             // TopicId is common for all timetables.
             $sufix = hash('md5', data: json_encode($calendar));
         } else {
@@ -202,7 +202,7 @@ class course_target extends modattendance_target
                 \core\output\notification::NOTIFY_INFO,
                 get_string(
                     "notifications_new_activity",
-                    "local_attendancewebhook",
+                    "local_scheduletool",
                     [
                         'activityname' => $this->config->module_name,
                         'coursename' => $this->course->shortname,
@@ -303,9 +303,9 @@ class course_target extends modattendance_target
      */
     static public function get_course_calendars($course, $user = null): array
     {
-        $cache_ttl = get_config('local_attendancewebhook', 'local_caches_ttl');
+        $cache_ttl = get_config('local_scheduletool', 'local_caches_ttl');
         // Use cache.
-        $cache = \cache::make('local_attendancewebhook', 'course_calendar');
+        $cache = \cache::make('local_scheduletool', 'course_calendar');
         $cachekey = 'course_calendar_' . $course->id;
         $calendar_cache = $cache_ttl > 0 ? $cache->get($cachekey) : false;
         $calendars = [];
@@ -340,7 +340,7 @@ class course_target extends modattendance_target
     }
     static $scheduleforuser = [];
     /**
-     * Get schedule for course.
+     * Get schedule for course from REST services: schedules, exams.
      * Get schedules from POD view.
      * @param object $course
      * @return array string jsons.
@@ -348,9 +348,9 @@ class course_target extends modattendance_target
     static public function get_schedule_for_course($course, int $fromDate, int $toDate): array
     {
         $results = [];
-        $schedulerestservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
-        $examrestservice = get_config('local_attendancewebhook', 'restservices_exams_url');
-        $apiKey = get_config('local_attendancewebhook', 'restservices_schedules_apikey');
+        $schedulerestservice = get_config('local_scheduletool', 'restservices_schedules_url');
+        $examrestservice = get_config('local_scheduletool', 'restservices_exams_url');
+        $apiKey = get_config('local_scheduletool', 'restservices_schedules_apikey');
         
         if ($schedulerestservice != '' || $examrestservice != '') {
             $codsigmas = [];
@@ -437,7 +437,7 @@ class course_target extends modattendance_target
      */
     static public function parse_id_from_course($course): string {
         // Parse idnumber eith regexpr.
-        $courseidregex = get_config('local_attendancewebhook', 'restservices_courseid_regex');
+        $courseidregex = get_config('local_scheduletool', 'restservices_courseid_regex');
         if ($courseidregex == '') {
             return '';
         }
@@ -452,14 +452,14 @@ class course_target extends modattendance_target
      */
     static public function get_schedule_for_user($user): string
     {
-        $restservice = get_config('local_attendancewebhook', 'restservices_schedules_url');
+        $restservice = get_config('local_scheduletool', 'restservices_schedules_url');
         if ($restservice == '') {
             return '';
         }
         if (isset(self::$scheduleforuser[$user->id])) {
             return self::$scheduleforuser[$user->id];
         }
-        $apiKey = get_config('local_attendancewebhook', 'restservices_schedules_apikey');
+        $apiKey = get_config('local_scheduletool', 'restservices_schedules_apikey');
         $dni = strtoupper(substr($user->username, 1)); // TODO get real DNI.
         // Get this monday.
         $monday = strtotime('monday this week');
@@ -508,8 +508,8 @@ class course_target extends modattendance_target
         }
         
         $calendars = lib::collect_calendars($data,
-                         get_config(plugin: 'local_attendancewebhook', name: 'compact_calendar'));
-        if (get_config(plugin: 'local_attendancewebhook', name: 'compact_calendar')) {
+                         get_config(plugin: 'local_scheduletool', name: 'compact_calendar'));
+        if (get_config(plugin: 'local_scheduletool', name: 'compact_calendar')) {
             $calendars = lib::compress_calendars($calendars);
         }
         return $calendars;

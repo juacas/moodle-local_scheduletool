@@ -18,13 +18,13 @@ defined('MOODLE_INTERNAL') || die();
 
 // Services no longer used. Better plain php scripts: endpoint.php, closeEvent.php, signUp.php, getUserData.php, getlogs.php.
 // $functions = [
-//     'local_attendancewebhook_add_session' => [
-//         'classname' => 'local_attendancewebhook\external\close_event',
+//     'local_scheduletool_add_session' => [
+//         'classname' => 'local_scheduletool\external\close_event',
 //         'description' => 'Add a full attendance session with a list of attendees.',
 //         'type' => 'write'
 //     ],
-//     'local_attendancewebhook_save_attendance' => [
-//         'classname' => 'local_attendancewebhook\external\sign_up',
+//     'local_scheduletool_save_attendance' => [
+//         'classname' => 'local_scheduletool\external\sign_up',
 //         'description' => 'Save single attendance data.',
 //         'type' => 'write'
 //     ]
@@ -33,11 +33,11 @@ defined('MOODLE_INTERNAL') || die();
 // $services = [
 //     'Attendance Webhook' => [
 //         'functions' => [
-//             'local_attendancewebhook_add_session',
-//             'local_attendancewebhook_save_attendance',
+//             'local_scheduletool_add_session',
+//             'local_scheduletool_save_attendance',
 //         ],
 //         'restrictedusers' => 0,
 //         'enabled' => 0,
-//         'shortname' => 'attendancewebhook'
+//         'shortname' => 'scheduletool'
 //     ]
 // ];

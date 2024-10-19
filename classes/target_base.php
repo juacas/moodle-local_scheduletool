@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_attendancewebhook;
+namespace local_scheduletool;
 
 use moodle_database;
 
@@ -129,7 +129,7 @@ abstract class target_base
      *  It topicId starts with 'hybridteaching', it is a hybrid teaching session.
      *  It topicId starts with 'attendance', it is an attendance session.
      * @param mixed $object
-     * @param \local_attendancewebhook\event $event
+     * @param \local_scheduletool\event $event
      * @return object
      */
     static public function get_target(object $event, $config): target_base
@@ -178,7 +178,7 @@ abstract class target_base
     }
     /**
      * Register a single attendance from event data.
-     * @param \local_attendancewebhook\attendance $attendance
+     * @param \local_scheduletool\attendance $attendance
      */
     public abstract function register_attendance(attendance $attendance);
     /**

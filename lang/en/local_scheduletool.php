@@ -34,7 +34,7 @@ $string['notifications_enabled_name'] = 'Notifications';
 $string['notifications_new_activity'] = 'New attendance module "{$a->activityname}" was created in course "{$a->coursename}".';
 $string['notifications_user_unknown_notmarked'] = 'User not found, not marked: {$a}';
 
-$string['pluginname'] = 'Attendance Webhook';
+$string['pluginname'] = 'Schedule tools';
 $string['privacy:metadata'] = 'Attendance Webhook plugin stores data on behalf of Attendance plugin.';
 $string['messageprovider:error'] = 'Attendance Webhook notifications error events';
 $string['tempusers_enabled_description'] = 'Enable or disable the creation of temporary users';
@@ -107,7 +107,7 @@ $string['modhybridteaching_notavailable_description'] = 'mod_hybridteaching plug
 $string['field_mapping_heading'] = 'Field mapping';
 $string['field_mapping_description'] = 'Field names from which to extract user data';
 $string['logs_enabled_name'] = 'Enable logs';
-$string['logs_enabled_description'] = 'Enable or disable logs. Logs are written to moodle_data/attendancewebhook/logs/trace.log and can be viewed in <a href="{$a}">GetLogs</a>.';
+$string['logs_enabled_description'] = 'Enable or disable logs. Logs are written to moodle_data/scheduletool/logs/trace.log and can be viewed in <a href="{$a}">GetLogs</a>.';
 
 $string['withoutschedule'] = 'No schedule';
 $string['withschedule'] = 'As in schedule';
@@ -115,3 +115,6 @@ $string['compact_calendar_name'] = 'Compact calendar';
 $string['compact_calendar_description'] = 'Compact calendar representation using repetitive sessions with the same topic id. If disabled, every session is a different topic id .';
 $string['copy_schedule'] = 'Copy schedule';
 $string['copy_schedule_description'] = 'Copy schedule from oficial schedules to mod_attendance instances.';
+$string['copy_shedule_course'] = 'Create a activity named "{$a->attendancename}" in course "{$a->coursename}" and copy official schedules to track attendance';
+$string['no_timetables'] = 'No timetables available';
+$string['count_sessions_added'] = '{$a} attendance tracking sessions added.';

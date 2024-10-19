@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_attendancewebhook;
+namespace local_scheduletool;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -44,7 +44,7 @@ class event {
             $object = json_decode($json);
         }
         if (!is_object($object)) {
-            throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
+            throw new \moodle_exception('invalid_data', 'local_scheduletool');
         }
         $this->setTopic($object->topic);
         $this->set_opening_time(clean_param($object->openingTime, PARAM_NOTAGS));
@@ -71,7 +71,7 @@ class event {
 
     public function set_opening_time($opening_time) {
         if (($timestamp = strtotime($opening_time)) === false) {
-            throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
+            throw new \moodle_exception('invalid_data', 'local_scheduletool');
         } else {
             $this->opening_time = $timestamp;
         }
@@ -83,7 +83,7 @@ class event {
 
     public function set_closing_time($closing_time) {
         if (($timestamp = strtotime($closing_time)) === false) {
-            throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
+            throw new \moodle_exception('invalid_data', 'local_scheduletool');
         } else {
             $this->closing_time = $timestamp;
         }

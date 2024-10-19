@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_attendancewebhook;
+namespace local_scheduletool;
 use \mod_hybridteaching\controller\sessions_controller;
 use \mod_hybridteaching\controller\attendance_controller;
 defined('MOODLE_INTERNAL') || die();
@@ -62,13 +62,13 @@ class modhybridteaching_target extends target_base
     }
     /**
      * Register a single attendance.
-     * @param \local_attendancewebhook\attendance $attendance
+     * @param \local_scheduletool\attendance $attendance
      * @return void
      */
     public function register_attendance(attendance $attendance)
     {
         global $USER;
-        $user = \local_attendancewebhook\lib::get_user_enrol($this->config, $attendance->get_member(), $this->course);
+        $user = \local_scheduletool\lib::get_user_enrol($this->config, $attendance->get_member(), $this->course);
         // TODO: Supports temp users???
         if (!$user) {
            throw new \Exception('User not found: ' . $attendance );
@@ -129,7 +129,7 @@ class modhybridteaching_target extends target_base
     }
     static public function get_target_name()
     {
-        return get_string('modattendance', 'local_attendancewebhook');
+        return get_string('modattendance', 'local_scheduletool');
     }
     /**
      * Implement get_topics for mod_attendance.
@@ -150,7 +150,7 @@ class modhybridteaching_target extends target_base
         $coursesid = array_filter($coursesid, function ($courseid) {
             return lib::get_course_if_allowed($courseid);
         });
-        $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
+        $prefix = get_config('local_scheduletool', 'restservices_prefix');
         $hybridteachings = $DB->get_records_list('hybridteaching', 'course', $coursesid);
         foreach ($hybridteachings as $hybridteaching) {
             $cm = get_coursemodule_from_instance('hybridteaching', $hybridteaching->id, 0, false, MUST_EXIST);

@@ -17,7 +17,7 @@
 /**
  * CloseEvent. Report final results with a set of attendances.
  *
- * @package    local_attendancewebhook
+ * @package    local_scheduletool
  * @copyright  2024 University of Valladoild, Spain
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -27,7 +27,7 @@ require_once($CFG->libdir . '/filelib.php');
 /** @var moodle_database $DB */
 global $DB;
 
-if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
+if (!get_config('local_scheduletool', 'restservices_enabled')) {
     header('HTTP/1.1 405 Method Not Allowed');
     die();
     // Better act as a service don't throw new moodle_exception('servicedonotexist', 'error').
@@ -43,24 +43,24 @@ try {
     }
     $PAGE->set_context(null);
     header('Content-Type: application/json;charset=UTF-8');
-    \local_attendancewebhook\lib::log_info("CloseEvent Request.===============================");
+    \local_scheduletool\lib::log_info("CloseEvent Request.===============================");
 
     // Check apikey and apiuser aginst config.
-    if ($apikey != get_config('local_attendancewebhook', 'apikey')) {
+    if ($apikey != get_config('local_scheduletool', 'apikey')) {
         header('HTTP/1.0 401 Unauthorized');
         die();
     }
     // CLose_event is actually an add_session web service request.
-    $response = local_attendancewebhook\lib::process_add_session();
+    $response = local_scheduletool\lib::process_add_session();
     if ($response == 1) {
         echo 'true';
     } else {
         echo json_encode($response);
-        local_attendancewebhook\lib::log_error("Inusual response." . json_encode($response));
+        local_scheduletool\lib::log_error("Inusual response." . json_encode($response));
     }
 } catch (\Exception $e) {
     header('HTTP/1.0 400 Bad Request');
-    local_attendancewebhook\lib::log_error($e->getMessage());
+    local_scheduletool\lib::log_error($e->getMessage());
     echo $e->getMessage();
     die();
 }

@@ -17,13 +17,13 @@
 /**
  * Add_sessions to attendance.
  *
- * @package    local_attendancewebhook
+ * @package    local_scheduletool
  * @copyright  2024 University of Valladoild, Spain
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-use local_attendancewebhook\course_target;
-use local_attendancewebhook\modattendance_target;
-use local_attendancewebhook\target_base;
+use local_scheduletool\course_target;
+use local_scheduletool\modattendance_target;
+use local_scheduletool\target_base;
 
 require_once(__DIR__ . '/../../config.php');
 
@@ -38,43 +38,50 @@ if ($courseid) {
     $course = get_course($courseid);
     $cm = null;
     $context = context_course::instance($course->id);
+    $description = get_string(
+        'copy_shedule_course',
+        'local_scheduletool',
+        ['coursename' => $course->fullname, 'attendancename' => get_config('local_scheduletool', 'module_name')]
+    );
 } else {
     list($course, $cm) = get_course_and_cm_from_cmid($cmid, 'attendance');
     $context = context_module::instance($cm->id);
+    $description = get_string('copy_schedule_description', 'local_scheduletool', $cm->name);
 }
 
 require_course_login($course, true, $cm);
 require_capability('mod/attendance:addinstance', $context);
 
-$PAGE->set_url(new moodle_url('/local/attendancewebhook/add_sessions.php', ['cmid' => $cmid, 'course' => $courseid]));
+$PAGE->set_url(new moodle_url('/local/scheduletool/add_sessions.php', ['cmid' => $cmid, 'course' => $courseid]));
 $PAGE->set_context($context);
-$PAGE->set_title(get_string('copy_schedule', 'local_attendancewebhook'));
-$PAGE->set_heading(get_string('copy_schedule', 'local_attendancewebhook'));
+$PAGE->set_title(get_string('copy_schedule', 'local_scheduletool'));
+$PAGE->set_heading(get_string('copy_schedule', 'local_scheduletool'));
 $PAGE->set_pagelayout('standard');
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('copy_schedule_description', 'local_attendancewebhook'));
+echo $OUTPUT->notification($description, 'info', false);
 
 // Check copy_schedule_enabled setting.
-$copy_schedule_enabled = get_config('local_attendancewebhook', 'copy_schedule_enabled');
+$copy_schedule_enabled = get_config('local_scheduletool', 'copy_schedule_enabled');
 if (!$copy_schedule_enabled) {
-    echo $OUTPUT->notification(get_string('copy_schedule_disabled', 'local_attendancewebhook'), 'error');
+    echo $OUTPUT->notification(get_string('copy_schedule_disabled', 'local_scheduletool'), 'error');
     echo $OUTPUT->footer();
     die();
 }
 
-$form = new \local_attendancewebhook\forms\add_sessions_form(null, ['cmid' => $cmid, 'course' => $course]);
+$form = new \local_scheduletool\forms\add_sessions_form(null, ['cmid' => $cmid, 'course' => $course]);
 if ($form->is_cancelled()) {
     redirect(new moodle_url('/mod/attendance/view.php', ['id' => $cm->id]));
 } else if ($data = $form->get_data()) {
     // Extract selected calendars.
     $calendars = [];
+    $sessioncount = 0;
     foreach ($data as $key => $value) {
         if (strlen($key) > 50 && $value == "1") {
             $calendar = json_decode(base64_decode($key));
 
             // If instance has static idnumber set use course_target else attendance_target.
-            if ($cm == null || ($cm->idnumber === local_attendancewebhook\lib::CM_IDNUMBER && $cm->deletioninprogress === 0)) {
+            if ($cm == null || ($cm->idnumber === local_scheduletool\lib::CM_IDNUMBER && $cm->deletioninprogress === 0)) {
                 list($topicid) = course_target::encode_topic_id($calendar, $course);
             } else {
                 // Null sesion
@@ -84,7 +91,7 @@ if ($form->is_cancelled()) {
 
 
             $startweekday = $calendar->timetables[0]->weekdays;
-            $dates = local_attendancewebhook\lib::expand_dates_from_calendar($calendar);
+            $dates = local_scheduletool\lib::expand_dates_from_calendar($calendar);
             foreach ($dates as $date) {
                 // Format $calendar-> "2024-08-21T03:52:19+0000"
                 // Create a mock event.
@@ -94,14 +101,14 @@ if ($form->is_cancelled()) {
                 $closingTime = $date->endTime;
                 $eventOpeningTime = date('c', strtotime($openingDate . ' ' . $openingTime));
                 $eventClosingTime = date('c', strtotime($closingDate . ' ' . $closingTime));
-
+                $useridfield = get_config('local_scheduletool', 'user_id');
                 $eventobj = (object) [
                     'topic' => (object) [
                         'topicId' => $topicid,
                         'name' => '',
                         'type' => 'D',
                         'member' => (object) [
-                            'username' => $USER->username, // TODO: use configured user field.
+                            'username' => $USER->$useridfield, 
                             'firstname' => $USER->firstname,
                             'lastname' => $USER->lastname,
                             'email' => $USER->email
@@ -113,23 +120,20 @@ if ($form->is_cancelled()) {
                     'eventNote' => $calendar->timetables[0]->info,
                     'attendances' => []
                 ];
-                $event = new local_attendancewebhook\event($eventobj);
-                $att_target = target_base::get_target($event, get_config('local_attendancewebhook'));
+                $event = new local_scheduletool\event($eventobj);
+                $att_target = target_base::get_target($event, get_config('local_scheduletool'));
                 // Force to get session.
                 $session = $att_target->get_session();
+                if ($session) {
+                    $sessioncount++;
+                }
             }
         }
 
     }
-
-    $response = count($calendars) > 0 ? 1 : 0;
-    //$response = \local_attendancewebhook\lib::process_add_session($data);
-    if ($response == 1) {
-        echo $OUTPUT->notification(get_string('sessions_added', 'local_attendancewebhook'));
-    } else {
-        echo $OUTPUT->notification(get_string('error_adding_sessions', 'local_attendancewebhook'), 'error');
-    }
-    echo $OUTPUT->continue(new moodle_url('/mod/attendance/view.php', ['id' => $cm->id]));
+    echo $OUTPUT->notification(get_string('count_sessions_added', 'local_scheduletool', $sessioncount));
+  
+   // echo $OUTPUT->continue(new moodle_url('/mod/attendance/view.php', ['id' => $cm->id]));
 } else {
     $form->display();
 }

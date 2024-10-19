@@ -83,11 +83,14 @@ $string['modhybridteaching_notavailable_description'] = 'El plugin mod_hybridtea
 $string['field_mapping_heading'] = 'Mapeo de campos';
 $string['field_mapping_description'] = 'Mapeo de campos para los datos de usuario';
 $string['logs_enabled_name'] = 'Log activos';
-$string['logs_enabled_description'] = 'Habilitar o deshabilitar los logs. Los logs se guardan en moodledata/local/attendancewebhook/logs/mtrace.log y se pueden ver en <a href="{$a}">GetLogs</a>.';
+$string['logs_enabled_description'] = 'Habilitar o deshabilitar los logs. Los logs se guardan en moodledata/local/scheduletool/logs/mtrace.log y se pueden ver en <a href="{$a}">GetLogs</a>.';
 
 $string['withoutschedule'] = 'Sin información de horario';
 $string['withschedule'] = 'Según horario docente';
 $string['compact_calendar_name'] = 'Comparctar calendario';
 $string['compact_calendar_description'] = 'Compactar calendarios de sesiones usando eventos de repetición con el mismo identificador para todos. Si se desactiva se usará un identificador por sesión.';
-$string['copy_schedule'] = 'Copiar horarios';
+$string['copy_schedule'] = 'Control de horarios';
 $string['copy_schedule_description'] = 'Copiar horarios oficiales a la actividad de mod_attendance';
+$string['copy_shedule_course'] = 'Crea una actividad llamada "{$a->attendancename}"en el curso "{$a->coursename}" y copia los horarios oficiales para hacer seguimiento';
+$string['no_timetables'] = 'No hay horarios disponibles';
+$string['count_sessions_added'] = 'Se han añadido {$a} sesiones de seguimiento de asistencia.';

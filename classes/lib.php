@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_attendancewebhook;
+namespace local_scheduletool;
 use PhpXmlRpc\Exception;
 
 defined('MOODLE_INTERNAL') || die();
@@ -25,7 +25,7 @@ require_once($CFG->dirroot . '/user/lib.php');
 class lib
 {
     const WEEK_DAYS = ["L", "M", "X", "J", "V", "S", "D"];
-    const CM_IDNUMBER = 'local_attendancewebhook';
+    const CM_IDNUMBER = 'local_scheduletool';
     // TODO: i18n status descriptions.
     const STATUS_DESCRIPTIONS = array(
         'NOTPRESENT' => 'NO PRESENTADO',
@@ -73,7 +73,7 @@ class lib
 
     public static function get_config()
     {
-        $config = get_config('local_attendancewebhook');
+        $config = get_config('local_scheduletool');
         if (
             empty($config->module_name) || !isset($config->module_section)
             || empty($config->course_id) || empty($config->member_id)
@@ -208,7 +208,7 @@ class lib
     private static function log($message, $type)
     {
         global $CFG;
-        if (get_config('local_attendancewebhook', 'logs_enabled') == false) {
+        if (get_config('local_scheduletool', 'logs_enabled') == false) {
             return;
         }
         $dir = $CFG->dataroot . DIRECTORY_SEPARATOR . self::CM_IDNUMBER . DIRECTORY_SEPARATOR . 'logs';
@@ -260,11 +260,11 @@ class lib
         $user = self::get_user($config, $event->get_logtaker());
         if ($user) {
             $message = new \core\message\message();
-            $message->component = 'local_attendancewebhook';
+            $message->component = 'local_scheduletool';
             $message->userfrom = \core_user::get_noreply_user();
             $message->courseid = $courseid;
             $message->userto = $user; // TODO: $user->lang should set the language.
-            $message->name = 'notification'; // Provider local_attendancewebhook/notification. It's the only one declared.
+            $message->name = 'notification'; // Provider local_scheduletool/notification. It's the only one declared.
 
             $eventstr = strval($event);
             $a = (object) [
@@ -276,23 +276,23 @@ class lib
                 'eventstr' => $eventstr,
             ];
 
-            $message->subject = get_string('notification_subject', 'local_attendancewebhook', $a);
+            $message->subject = get_string('notification_subject', 'local_scheduletool', $a);
             if ($level == \core\output\notification::NOTIFY_ERROR) {
                 if ($attendances) {
-                    $text = get_string('notification_error_attendances', 'local_attendancewebhook', $a);
+                    $text = get_string('notification_error_attendances', 'local_scheduletool', $a);
                 } else {
-                    $text = get_string('notification_error_event', 'local_attendancewebhook', $a);
+                    $text = get_string('notification_error_event', 'local_scheduletool', $a);
                 }
-                $admintext = get_string('notification_contact_admin', 'local_attendancewebhook', $a);
+                $admintext = get_string('notification_contact_admin', 'local_scheduletool', $a);
             } else {
-                $text = get_string('notification_info', 'local_attendancewebhook', $a);
+                $text = get_string('notification_info', 'local_scheduletool', $a);
                 $admintext = '';
             }
 
             $message->fullmessage = "{$text}\n";
             $message->fullmessagehtml = "<p>{$text}</p>";
             if ($attendances) {
-                $message->fullmessage .= get_string('notification_messages', 'local_attendancewebhook') . "\n";
+                $message->fullmessage .= get_string('notification_messages', 'local_scheduletool') . "\n";
                 foreach ($attendances as &$attendance) {
                     $attendancestr = strval($attendance);
                     $message->fullmessage .= "{$attendancestr} \n";
@@ -330,9 +330,9 @@ class lib
      */
     public static function get_local_topics($user)
     {
-        $cache_ttl = get_config('local_attendancewebhook', 'local_caches_ttl');
+        $cache_ttl = get_config('local_scheduletool', 'local_caches_ttl');
         // Use cache.
-        $cache = \cache::make('local_attendancewebhook', 'user_topics');
+        $cache = \cache::make('local_scheduletool', 'user_topics');
         $cachekey = "user_topic_{$user->id}";
         if ($cache_ttl > 0 && $cached_topic = $cache->get($cachekey)) {
             // Check lifetime.
@@ -342,15 +342,15 @@ class lib
         }
         // Cache miss or expired.
         $topics = [];
-        if (get_config('local_attendancewebhook', 'export_courses_as_topics')) {
+        if (get_config('local_scheduletool', 'export_courses_as_topics')) {
             $courses = course_target::get_topics($user);
             $topics = array_merge($topics, $courses);
         }
-        if (get_config('local_attendancewebhook', 'modattendance_enabled')) {
+        if (get_config('local_scheduletool', 'modattendance_enabled')) {
             $mods = modattendance_target::get_topics($user);
             $topics = array_merge($topics, $mods);
         }
-        if (get_config('local_attendancewebhook', 'modhybridteaching_enabled')) {
+        if (get_config('local_scheduletool', 'modhybridteaching_enabled')) {
             $mods = modhybridteaching_target::get_topics($user);
             $topics = array_merge($topics, $mods);
         }
@@ -366,8 +366,8 @@ class lib
     public static function get_remote_topics($userid)
     {
         // Use remote topics cache.
-        $cache_ttl = get_config('local_attendancewebhook', 'remote_caches_ttl');
-        $cache = \cache::make('local_attendancewebhook', 'user_topics');
+        $cache_ttl = get_config('local_scheduletool', 'remote_caches_ttl');
+        $cache = \cache::make('local_scheduletool', 'user_topics');
         $cachekey = "remote_user_topic_{$userid}";
         if ($cache_ttl > 0 && $cached_topic = $cache->get($cachekey)) {
             // Check lifetime. 1800 seconds for remote topics.
@@ -429,7 +429,7 @@ class lib
     public static function get_user_data($userid)
     {
         global $DB;
-        $useridfield = get_config('local_attendancewebhook', 'user_id');
+        $useridfield = get_config('local_scheduletool', 'user_id');
         $user = $DB->get_record('user', [$useridfield => $userid], '*');
         if (!$user) {
             return false;
@@ -447,7 +447,7 @@ class lib
         }
         */
 
-        $NIAField = get_config('local_attendancewebhook', 'field_NIA');
+        $NIAField = get_config('local_scheduletool', 'field_NIA');
         // Get NIA from user profile.
         if (empty($user->$NIAField)) {
             // If NIA is empty, look into custom fields.
@@ -540,7 +540,7 @@ class lib
      */
     public static function get_remotes($type)
     {
-        $remotes = get_config('local_attendancewebhook', $type);
+        $remotes = get_config('local_scheduletool', $type);
         // Each line is a proxyed endpoint with fomat: Prefix|URL.
         // Split lines.
         $remotes = explode("\n", $remotes);
@@ -559,8 +559,8 @@ class lib
      */
     public static function process_save_attendance()
     {
-        $remotes = \local_attendancewebhook\lib::get_remotes('restservices_signUp');
-        $event = \local_attendancewebhook\lib::get_attendance_event();
+        $remotes = \local_scheduletool\lib::get_remotes('restservices_signUp');
+        $event = \local_scheduletool\lib::get_attendance_event();
         return self::process_register_attendance_with_proxys($event, $remotes);
     }
     /**
@@ -569,15 +569,15 @@ class lib
      */
     public static function process_add_session()
     {
-        $remotes = \local_attendancewebhook\lib::get_remotes('restservices_closeEvent');
-        $event = \local_attendancewebhook\lib::get_event();
+        $remotes = \local_scheduletool\lib::get_remotes('restservices_closeEvent');
+        $event = \local_scheduletool\lib::get_event();
         return self::process_register_attendance_with_proxys($event, $remotes);
     }
     /**
      * Process register_attendance request.
-     * @param $event \local_attendancewebhook\attendance_event|\local_attendancewebhook\attendance_event
+     * @param $event \local_scheduletool\attendance_event|\local_scheduletool\attendance_event
      * @param $remotes array of remotes for the service.
-     * @see \local_attendancewebhook\lib::get_remotes
+     * @see \local_scheduletool\lib::get_remotes
      * @return bool|array True if success. Array of errors otherwise.
      */
     public static function process_register_attendance_with_proxys($event, $remotes)
@@ -586,7 +586,7 @@ class lib
             return false;
         }
 
-        $config = \local_attendancewebhook\lib::get_config();
+        $config = \local_scheduletool\lib::get_config();
         if (!$config) {
             return false;
         }
@@ -599,13 +599,13 @@ class lib
             if ($config->restservices_enabled) {
                 global $DB, $CFG, $USER;
 
-                list($type, $prefix) = \local_attendancewebhook\target_base::parse_topic_id($event->getTopic()->get_topic_id());
+                list($type, $prefix) = \local_scheduletool\target_base::parse_topic_id($event->getTopic()->get_topic_id());
                 // Get proxies.
 
                 if ($prefix == $config->restservices_prefix) {
-                    $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
+                    $att_target = \local_scheduletool\target_base::get_target($event, $config);
                     $att_target->errors = &$errors;
-                    $logtaker = \local_attendancewebhook\lib::get_user($config, $event->get_logtaker());
+                    $logtaker = \local_scheduletool\lib::get_user($config, $event->get_logtaker());
                     if (!$logtaker) {
                         throw new \Exception('Unknown logtaker:' . $event->get_logtaker());
                     }
@@ -658,7 +658,7 @@ class lib
         if (count($errors) > 0) {
             $courseid = $att_target ? $att_target->getCourse()->id ?? 0 : 0;
             lib::log_error($errors);
-            \local_attendancewebhook\lib::notify($config, $event, $courseid, \core\output\notification::NOTIFY_ERROR, $errors);
+            \local_scheduletool\lib::notify($config, $event, $courseid, \core\output\notification::NOTIFY_ERROR, $errors);
             // One error means that the attendance was not saved.
             return $errors;
         } else {
@@ -673,7 +673,7 @@ class lib
     //             return false;
     //         }
 
-    //         $config = \local_attendancewebhook\lib::get_config();
+    //         $config = \local_scheduletool\lib::get_config();
     //         if (!$config) {
     //             return false;
     //         }
@@ -682,17 +682,17 @@ class lib
     //         if ($config->restservices_enabled) {
     //             // Impersonates the logtaker user.
     //             global $USER;
-    //             $logtaker = \local_attendancewebhook\lib::get_user($config, $event->get_logtaker());
+    //             $logtaker = \local_scheduletool\lib::get_user($config, $event->get_logtaker());
     //             if (!$logtaker) {
     //                 throw new \Exception('Unknown logtaker:' . $event->get_logtaker());
     //             }
     //             $USER = $logtaker;
 
 
-    //             list($type, $prefix, $topicId) = \local_attendancewebhook\target_base::parse_topic_id($event->getTopic()->get_topic_id());
+    //             list($type, $prefix, $topicId) = \local_scheduletool\target_base::parse_topic_id($event->getTopic()->get_topic_id());
     //             if ($prefix == $config->restservices_prefix) {
     //                 // Local request.
-    //                 $att_target = \local_attendancewebhook\target_base::get_target($event, $config);
+    //                 $att_target = \local_scheduletool\target_base::get_target($event, $config);
     //                 $att_target->errors = &$errors;
     //                 $att_target->register_attendances();
 
@@ -735,7 +735,7 @@ class lib
 
     //     if (count($errors) > 0) {
     //         lib::log_error($errors);
-    //         \local_attendancewebhook\lib::notify_error($config, $event, $errors);
+    //         \local_scheduletool\lib::notify_error($config, $event, $errors);
     //         // One error means that the attendance was not saved.
     //         return $errors;
     //     } else {
@@ -751,7 +751,7 @@ class lib
     public static function get_allowed_categories()
     {
         if (self::$allowed_categories === null) {
-            $categories = get_config('local_attendancewebhook', 'enableincategories');
+            $categories = get_config('local_scheduletool', 'enableincategories');
             self::$allowed_categories = lib::get_fulltree_categories($categories);
         }
         return self::$allowed_categories;
@@ -766,7 +766,7 @@ class lib
     {
 
         if (self::$disallowed_categories === null) {
-            $categories = get_config('local_attendancewebhook', 'disableincategories');
+            $categories = get_config('local_scheduletool', 'disableincategories');
             self::$disallowed_categories = lib::get_fulltree_categories($categories);
         }
         return self::$disallowed_categories;
@@ -811,16 +811,16 @@ class lib
             return false;
         }
         // Check if this course is redirected.
-        if (get_config('local_attendancewebhook', 'skip_redirected_courses') && $course->format == 'redirected') {
+        if (get_config('local_scheduletool', 'skip_redirected_courses') && $course->format == 'redirected') {
             return false;
         }
         // Get disallowed categories.
-        $disalloedcategories = \local_attendancewebhook\lib::get_disallowed_categories();
+        $disalloedcategories = \local_scheduletool\lib::get_disallowed_categories();
         if (count($disalloedcategories) > 0 && in_array($course->category, $disalloedcategories)) {
             return false;
         }
         // Get allowed categories.
-        $categories = \local_attendancewebhook\lib::get_allowed_categories();
+        $categories = \local_scheduletool\lib::get_allowed_categories();
         if (count($categories) > 0 && in_array($course->category, $categories)) {
             return $course;
         } else {

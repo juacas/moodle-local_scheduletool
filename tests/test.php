@@ -419,4 +419,4 @@ $course->id = 1;
 $course->shortname = 'TC';
 $course->fullname = 'TEORIA DE LA COMUNICACION (1-211-512-46612-2-2024)';
 
-$calendars = local_attendancewebhook\course_target::parse_course_calendars($course, $json);
+$calendars = local_scheduletool\course_target::parse_course_calendars($course, $json);

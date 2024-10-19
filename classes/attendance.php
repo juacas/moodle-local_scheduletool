@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_attendancewebhook;
+namespace local_scheduletool;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -30,7 +30,7 @@ class attendance {
 
     public function __construct($object) {
         if (!is_object($object) && ! $object instanceof \stdClass) {
-            throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
+            throw new \moodle_exception('invalid_data', 'local_scheduletool');
         }
         $this->set_member($object->member);
         $this->set_mode(clean_param($object->mode, PARAM_NOTAGS));
@@ -72,7 +72,7 @@ class attendance {
 
     public function set_server_time($server_time) {
         if (($timestamp = strtotime($server_time)) === false) {
-            throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
+            throw new \moodle_exception('invalid_data', 'local_scheduletool');
         } else {
             $this->server_time = $timestamp;
         }

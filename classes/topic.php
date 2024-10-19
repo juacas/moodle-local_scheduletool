@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_attendancewebhook;
+namespace local_scheduletool;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -30,7 +30,7 @@ class topic {
 
     public function __construct($object) {
         if (!is_object($object)) {
-            throw new \moodle_exception('invalid_data', 'local_attendancewebhook');
+            throw new \moodle_exception('invalid_data', 'local_scheduletool');
         }
         $this->set_topic_id(clean_param($object->topicId, PARAM_NOTAGS));
         $this->setName(clean_param($object->name, PARAM_TEXT));

@@ -16,7 +16,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_attendancewebhook';
+$plugin->component = 'local_scheduletool';
 $plugin->release = '1.4.8';
 $plugin->version = 2024092000;
 $plugin->requires = 2016120505; // Moodle 3.2.5.

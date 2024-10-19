@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_attendancewebhook\external;
+namespace local_scheduletool\external;
 
 defined('MOODLE_INTERNAL') || die;
 use \core_external\external_api;
 use \core_external\external_function_parameters;
 use \core_external\external_value;
-use \local_attendancewebhook\lib;
+use \local_scheduletool\lib;
 
 require_once($CFG->dirroot . '/lib/externallib.php');
 /**
@@ -38,9 +38,9 @@ class close_event extends external_api
     {
         $context = \context_system::instance();
         self::validate_context($context);
-        if (get_config('local_attendancewebhook', 'modattendance_enabled')) {
+        if (get_config('local_scheduletool', 'modattendance_enabled')) {
 
-            if (get_config('local_attendancewebhook', 'export_courses_as_topics')) {
+            if (get_config('local_scheduletool', 'export_courses_as_topics')) {
                 require_capability('moodle/course:manageactivities', $context);
                 require_capability('mod/attendance:addinstance', $context);
                 require_capability('mod/attendance:changepreferences', $context);
@@ -49,7 +49,7 @@ class close_event extends external_api
             require_capability('mod/attendance:takeattendances', $context);
             require_capability('mod/attendance:changeattendances', $context);
 
-            if (get_config('local_attendancewebhook', 'tempusers_enabled')) {
+            if (get_config('local_scheduletool', 'tempusers_enabled')) {
                 require_capability('mod/attendance:managetemporaryusers', $context); // TODO: Check conditionally.
                 require_capability('moodle/user:create', $context);
                 require_capability('moodle/user:update', $context);

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_attendancewebhook;
+namespace local_scheduletool;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -157,23 +157,23 @@ class modattendance_target extends target_base
     }
     /**
      * Register a single attendance.
-     * @param \local_attendancewebhook\attendance $attendance
+     * @param \local_scheduletool\attendance $attendance
      * @return void
      */
     public function register_attendance(attendance $attendance)
     {
         global $USER;
         $member = $attendance->get_member();
-        $user = \local_attendancewebhook\lib::get_user_enrol($this->config, $member, $this->course);
+        $user = \local_scheduletool\lib::get_user_enrol($this->config, $member, $this->course);
         if (!$user) {
-            if (!\local_attendancewebhook\lib::is_tempusers_enabled($this->config)) {
-                $msg = get_string('notifications_user_unknown_notmarked', 'local_attendancewebhook', $member);
+            if (!\local_scheduletool\lib::is_tempusers_enabled($this->config)) {
+                $msg = get_string('notifications_user_unknown_notmarked', 'local_scheduletool', $member);
 
                 lib::log_error($msg);
                 $this->errors[] = $msg;
                 return;
             } else {
-                $tempuser = \local_attendancewebhook\lib::get_tempuser($attendance, $this->course);
+                $tempuser = \local_scheduletool\lib::get_tempuser($attendance, $this->course);
                 if (!$tempuser) {
                     $this->errors[] = $attendance;
                     return;
@@ -205,7 +205,7 @@ class modattendance_target extends target_base
     }
     static public function get_target_name()
     {
-        return get_string('modattendance', 'local_attendancewebhook');
+        return get_string('modattendance', 'local_scheduletool');
     }
     /**
      * Implement get_topics for mod_attendance.
@@ -226,7 +226,7 @@ class modattendance_target extends target_base
         $coursesid = array_filter($coursesid, function ($courseid) {
             return lib::get_course_if_allowed($courseid);
         });
-        $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
+        $prefix = get_config('local_scheduletool', 'restservices_prefix');
         $attendances = $DB->get_records_list('attendance', 'course', $coursesid);
         foreach ($attendances as $attendance) {
             $cm = get_coursemodule_from_instance('attendance', $attendance->id, 0, false, MUST_EXIST);
@@ -312,7 +312,7 @@ class modattendance_target extends target_base
      */
     public static function encode_topic_id($calendar, $cmid, $sessionid): array
     {
-        $prefix = get_config('local_attendancewebhook', 'restservices_prefix');
+        $prefix = get_config('local_scheduletool', 'restservices_prefix');
         return [$prefix . '-attendance-' . $cmid . '-' . $sessionid, $calendar->timetables[0]->info];
     }
 }

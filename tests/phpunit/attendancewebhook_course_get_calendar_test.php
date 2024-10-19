@@ -1,14 +1,14 @@
 <?php
-namespace local_attendancewebhook\tests\phpunit;
+namespace local_scheduletool\tests\phpunit;
 
-use local_attendancewebhook\course_target;
+use local_scheduletool\course_target;
 
 defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/config.php');
 
 
-class attendancewebhook_course_get_calendar_test extends \advanced_testcase {
+class scheduletool_course_get_calendar_test extends \advanced_testcase {
 
     const COURSE_START = 1609459200; // 2021-01-01 00:00:00
     const COURSE_END = 1640995200; // 2022-01-01 00:00:00

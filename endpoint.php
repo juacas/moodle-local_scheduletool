@@ -17,7 +17,7 @@
 /**
  * EndPoint. Report set of attendances.
  *
- * @package    local_attendancewebhook
+ * @package    local_scheduletool
  * @copyright  2024 University of Valladoild, Spain
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -27,7 +27,7 @@ require_once($CFG->libdir.'/filelib.php');
 /** @var moodle_database $DB */
 global $DB;
 
-if (!get_config('local_attendancewebhook', 'restservices_enabled')) {
+if (!get_config('local_scheduletool', 'restservices_enabled')) {
     header('HTTP/1.1 405 Method Not Allowed');
     die();
     // Better act as a service don't throw new moodle_exception('servicedonotexist', 'error').
@@ -39,7 +39,7 @@ $path_info = $_SERVER['PATH_INFO'];
 $path_parts = explode('/', $path_info);
 $apikey = '';
 $service = '';
-local_attendancewebhook\lib::log_info('Request ENDPOINT:' . $path_info . "================================");
+local_scheduletool\lib::log_info('Request ENDPOINT:' . $path_info . "================================");
 // May the second element be the apikey.
 // First part is "/".
 if (count($path_parts) == 3) {
@@ -53,7 +53,7 @@ if (count($path_parts) == 3) {
         $apikey = $headers['Authorization'];
     } else {
         header('HTTP/1.0 400 Bad Request');
-        local_attendancewebhook\lib::log_error('No apikey in headers:' . json_encode($headers));
+        local_scheduletool\lib::log_error('No apikey in headers:' . json_encode($headers));
         die();
     }
 } else {
@@ -66,21 +66,21 @@ $PAGE->set_context(null);
 header('Content-Type: application/json;charset=UTF-8');
 
 // Check apikey and apiuser aginst config.
-if ($apikey != get_config('local_attendancewebhook', 'apikey')) {
+if ($apikey != get_config('local_scheduletool', 'apikey')) {
     header('HTTP/1.0 401 Unauthorized');
-    local_attendancewebhook\lib::log_error('Invalid apikey:' . $apikey);
+    local_scheduletool\lib::log_error('Invalid apikey:' . $apikey);
     die();
 }
 switch ($service) {
     case 'closeEvent':
-        $response = local_attendancewebhook\lib::process_add_session();
+        $response = local_scheduletool\lib::process_add_session();
         break;
     case 'signUp':
-        $response = local_attendancewebhook\lib::process_save_attendance();
+        $response = local_scheduletool\lib::process_save_attendance();
         break;
     default:
         header('HTTP/1.0 404 Not Found');
-        local_attendancewebhook\lib::log_error('Service not found:' . $path_info);
+        local_scheduletool\lib::log_error('Service not found:' . $path_info);
         die();
 }
 
