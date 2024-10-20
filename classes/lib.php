@@ -327,13 +327,17 @@ class lib
     }
     /**
      * Get local topics for the given user.
+     * @param $user object User object.
+     * @param $fromdate int From date timestamp.
+     * @param $todate int To date timestamp.
+     * @return array topics structure.
      */
-    public static function get_local_topics($user)
+    public static function get_local_topics($user, $fromdate = null, $todate = null)
     {
         $cache_ttl = get_config('local_scheduletool', 'local_caches_ttl');
         // Use cache.
         $cache = \cache::make('local_scheduletool', 'user_topics');
-        $cachekey = "user_topic_{$user->id}";
+        $cachekey = "user_topic_{$user->id}_{$fromdate}_{$todate}";
         if ($cache_ttl > 0 && $cached_topic = $cache->get($cachekey)) {
             // Check lifetime.
             if ($cached_topic->time > (time() - $cache_ttl)) {
@@ -343,7 +347,7 @@ class lib
         // Cache miss or expired.
         $topics = [];
         if (get_config('local_scheduletool', 'export_courses_as_topics')) {
-            $courses = course_target::get_topics($user);
+            $courses = course_target::get_topics($user, $fromdate, $todate);
             $topics = array_merge($topics, $courses);
         }
         if (get_config('local_scheduletool', 'modattendance_enabled')) {

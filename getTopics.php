@@ -102,10 +102,14 @@ $user = $DB->get_record('user', [$useridfield => $userid], '*');
 // }
 $topics = [];
 $local_topics = [];
+$fromdatestr = optional_param('fromdate', null, PARAM_TEXT);
+$todatestr = optional_param('todate', null , PARAM_TEXT);
+$fromdate = $fromdatestr ? strtotime($fromdatestr): null;
+$todate = $todatestr ? strtotime($todatestr) : null;
 
 try {
     if ($user) {
-        $local_topics = lib::get_local_topics($user);
+        $local_topics = lib::get_local_topics($user, );
     }
     // Get  proxyes topics.
     $remote_topics = lib::get_remote_topics($userid);

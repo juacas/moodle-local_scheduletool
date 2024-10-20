@@ -251,8 +251,12 @@ class course_target extends modattendance_target
     }
     /**
      * Implements get_topics for course_target.
+     * @param object $user
+     * @param int $fromdate timestamp
+     * @param int $todate timestamp
+     * @return array of topics.
      */
-    static public function get_topics($user): array
+    static public function get_topics($user, int $fromdate = null, int $todate = null): array
     {
         // Collect all courses in which the user is teacher: Has any of:
         // 'mod/attendance:addinstance'
@@ -276,7 +280,7 @@ class course_target extends modattendance_target
                     continue;
                 }
 
-                $calendars = self::get_course_calendars($course, $user);
+                $calendars = self::get_course_calendars($course, $user, $fromdate, $todate);
                 foreach ($calendars as $calendar) {
                     
                     [$topicid, $info] = self::encode_topic_id($calendar, $course);
@@ -299,25 +303,32 @@ class course_target extends modattendance_target
      * Get course calendar.
      * @param object $course
      * @param object $user
+     * @param int $fromdate
+     * @param int $todate
      * @return array calendars structure.
      */
-    static public function get_course_calendars($course, $user = null): array
+    static public function get_course_calendars($course, $user = null, int $fromdate = null, int $todate = null): array
     {
         $cache_ttl = get_config('local_scheduletool', 'local_caches_ttl');
         // Use cache.
         $cache = \cache::make('local_scheduletool', 'course_calendar');
-        $cachekey = 'course_calendar_' . $course->id;
+        $cachekey = "course_calendar_{$course->id}_{$fromdate}_{$todate}";
         $calendar_cache = $cache_ttl > 0 ? $cache->get($cachekey) : false;
         $calendars = [];
 
         if ($cache_ttl > 0 && $calendar_cache && $calendar_cache->time > (time() - $cache_ttl)) {
             return $calendar_cache->data;
         } else {
+            if ($fromdate == null) {
+                $fromdate = time();
+            }
             // Get this monday.
-            $this_monday = strtotime('monday this week');
-            $toDate = strtotime('+28 days', $this_monday); // TODO: pass as parameter.
+            $this_monday = strtotime('monday this week', $fromdate);
+            if ($todate == null) {
+                $todate = strtotime('+28 days', $this_monday);
+            }
            
-            $results = self::get_schedule_for_course($course, $this_monday, $toDate);
+            $results = self::get_schedule_for_course($course, $this_monday, $todate);
             $calendars = self::parse_course_calendars_pod($course, $results);
             lib::log_info(message: "Got calendar for course $course->id: $course->idnumber " . json_encode($calendars));
             // Default calendar entry.
