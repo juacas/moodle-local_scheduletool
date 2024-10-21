@@ -226,7 +226,6 @@ class modattendance_target extends target_base
         $coursesid = array_filter($coursesid, function ($courseid) {
             return lib::get_course_if_allowed($courseid);
         });
-        $prefix = get_config('local_scheduletool', 'restservices_prefix');
         $attendances = $DB->get_records_list('attendance', 'course', $coursesid);
         foreach ($attendances as $attendance) {
             $cm = get_coursemodule_from_instance('attendance', $attendance->id, 0, false, MUST_EXIST);
@@ -247,7 +246,7 @@ class modattendance_target extends target_base
                 // Create info text from dates.
                 $description = content_to_text($session->description, FORMAT_MOODLE);
                 $info = substr("{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')', 0, 100);
-                $topicid = self::encode_topic_id($prefix, $cm->id, $session->id);
+                $topicid = self::encode_topic_id(null,  $cm->id, $session->id);
                 $topics[] = (object) [
                     'topicId' => $topicid,
                     'name' => $att->name . " - " . $description,
@@ -313,6 +312,6 @@ class modattendance_target extends target_base
     public static function encode_topic_id($calendar, $cmid, $sessionid): array
     {
         $prefix = get_config('local_scheduletool', 'restservices_prefix');
-        return [$prefix . '-attendance-' . $cmid . '-' . $sessionid, $calendar->timetables[0]->info];
+        return [$prefix . '-attendance-' . $cmid . '-' . $sessionid , $calendar->timetables[0]->info ?? ''];
     }
 }
