@@ -246,7 +246,7 @@ class modattendance_target extends target_base
                 // Create info text from dates.
                 $description = content_to_text($session->description, FORMAT_MOODLE);
                 $info = substr("{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')', 0, 100);
-                $topicid = self::encode_topic_id(null,  $cm->id, $session->id);
+                list($topicid) = self::encode_topic_id(null,  $cm->id, $session->id);
                 $topics[] = (object) [
                     'topicId' => $topicid,
                     'name' => $att->name . " - " . $description,
