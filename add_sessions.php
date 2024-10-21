@@ -34,7 +34,11 @@ require_once(__DIR__ . '/../../config.php');
 $cmid = optional_param('cmid', null, PARAM_INT);
 $courseid = optional_param('course', null, PARAM_INT);
 
-if ($courseid) {
+if ($cmid) {
+    [$course, $cm] = get_course_and_cm_from_cmid($cmid, 'attendance');
+    $context = context_module::instance($cm->id);
+    $description = get_string('copy_schedule_description', 'local_scheduletool', $cm->name);
+} else {
     $course = get_course($courseid);
     $cm = null;
     $context = context_course::instance($course->id);
@@ -43,10 +47,6 @@ if ($courseid) {
         'local_scheduletool',
         ['coursename' => $course->fullname, 'attendancename' => get_config('local_scheduletool', 'module_name')]
     );
-} else {
-    list($course, $cm) = get_course_and_cm_from_cmid($cmid, 'attendance');
-    $context = context_module::instance($cm->id);
-    $description = get_string('copy_schedule_description', 'local_scheduletool', $cm->name);
 }
 
 require_course_login($course, true, $cm);
@@ -68,72 +68,88 @@ if (!$copy_schedule_enabled) {
     echo $OUTPUT->footer();
     die();
 }
+$fromdate = optional_param_array('fromdate', null, PARAM_RAW);
+$todate = optional_param_array('todate', null, PARAM_RAW);
 
-$form = new \local_scheduletool\forms\add_sessions_form(null, ['cmid' => $cmid, 'course' => $course]);
+$form = new \local_scheduletool\forms\add_sessions_form(
+    null,
+    [
+        'cmid' => $cmid,
+        'course' => $course,
+        'compress' => optional_param('compress', false, PARAM_BOOL),
+        'fromdate' => $fromdate,
+        'todate' => $todate
+    ]
+);
+
 if ($form->is_cancelled()) {
     redirect(new moodle_url('/mod/attendance/view.php', ['id' => $cm->id]));
 } else if ($data = $form->get_data()) {
-    // Extract selected calendars.
-    $calendars = [];
-    $sessioncount = 0;
-    foreach ($data as $key => $value) {
-        if (strlen($key) > 50 && $value == "1") {
-            $calendar = json_decode(base64_decode($key));
+    // Check action: Refresh or add.
+    if (isset($data->refresh)) {
+        $form->display();
+    } else {
+        // Extract selected calendars.
+        $calendars = [];
+        $sessioncount = 0;
+        foreach ($data as $key => $value) {
+            if (strlen($key) > 50 && $value == "1") {
+                $calendar = json_decode(base64_decode($key));
 
-            // If instance has static idnumber set use course_target else attendance_target.
-            if ($cm == null || ($cm->idnumber === local_scheduletool\lib::CM_IDNUMBER && $cm->deletioninprogress === 0)) {
-                list($topicid) = course_target::encode_topic_id($calendar, $course);
-            } else {
-                // Null sesion
-                list($topicid) = modattendance_target::encode_topic_id($calendar, $cm->id, null);
-            }
-            $calendars[] = $calendar;
+                // If instance has static idnumber set use course_target else attendance_target.
+                if ($cm == null || ($cm->idnumber === local_scheduletool\lib::CM_IDNUMBER && $cm->deletioninprogress === 0)) {
+                    list($topicid) = course_target::encode_topic_id($calendar, $course);
+                } else {
+                    // Null sesion
+                    list($topicid) = modattendance_target::encode_topic_id($calendar, $cm->id, null);
+                }
+                $calendars[] = $calendar;
 
 
-            $startweekday = $calendar->timetables[0]->weekdays;
-            $dates = local_scheduletool\lib::expand_dates_from_calendar($calendar);
-            foreach ($dates as $date) {
-                // Format $calendar-> "2024-08-21T03:52:19+0000"
-                // Create a mock event.
-                $openingDate = $date->date;
-                $closingDate = $date->date;
-                $openingTime = $date->startTime;
-                $closingTime = $date->endTime;
-                $eventOpeningTime = date('c', strtotime($openingDate . ' ' . $openingTime));
-                $eventClosingTime = date('c', strtotime($closingDate . ' ' . $closingTime));
-                $useridfield = get_config('local_scheduletool', 'user_id');
-                $eventobj = (object) [
-                    'topic' => (object) [
-                        'topicId' => $topicid,
-                        'name' => '',
-                        'type' => 'D',
-                        'member' => (object) [
-                            'username' => $USER->$useridfield, 
-                            'firstname' => $USER->firstname,
-                            'lastname' => $USER->lastname,
-                            'email' => $USER->email
+                $startweekday = $calendar->timetables[0]->weekdays;
+                $dates = local_scheduletool\lib::expand_dates_from_calendar($calendar);
+                foreach ($dates as $date) {
+                    // Format $calendar-> "2024-08-21T03:52:19+0000"
+                    // Create a mock event.
+                    $openingDate = $date->date;
+                    $closingDate = $date->date;
+                    $openingTime = $date->startTime;
+                    $closingTime = $date->endTime;
+                    $eventOpeningTime = date('c', strtotime($openingDate . ' ' . $openingTime));
+                    $eventClosingTime = date('c', strtotime($closingDate . ' ' . $closingTime));
+                    $useridfield = get_config('local_scheduletool', 'user_id');
+                    $eventobj = (object) [
+                        'topic' => (object) [
+                            'topicId' => $topicid,
+                            'name' => '',
+                            'type' => 'D',
+                            'member' => (object) [
+                                'username' => $USER->$useridfield,
+                                'firstname' => $USER->firstname,
+                                'lastname' => $USER->lastname,
+                                'email' => $USER->email
+                            ],
                         ],
-                    ],
-                    //  format $calendar-> "2024-08-21T03:52:19+0000"
-                    'openingTime' => $eventOpeningTime,
-                    'closingTime' => $eventClosingTime,
-                    'eventNote' => $calendar->timetables[0]->info,
-                    'attendances' => []
-                ];
-                $event = new local_scheduletool\event($eventobj);
-                $att_target = target_base::get_target($event, get_config('local_scheduletool'));
-                // Force to get session.
-                $session = $att_target->get_session();
-                if ($session) {
-                    $sessioncount++;
+                        //  format $calendar-> "2024-08-21T03:52:19+0000"
+                        'openingTime' => $eventOpeningTime,
+                        'closingTime' => $eventClosingTime,
+                        'eventNote' => $date->info,
+                        'attendances' => []
+                    ];
+                    $event = new local_scheduletool\event($eventobj);
+                    $att_target = target_base::get_target($event, get_config('local_scheduletool'));
+                    // Force to get session.
+                    $session = $att_target->get_session();
+                    if ($session) {
+                        $sessioncount++;
+                    }
                 }
             }
         }
-
+        echo $OUTPUT->notification(get_string('count_sessions_added', 'local_scheduletool', $sessioncount));
     }
-    echo $OUTPUT->notification(get_string('count_sessions_added', 'local_scheduletool', $sessioncount));
-  
-   // echo $OUTPUT->continue(new moodle_url('/mod/attendance/view.php', ['id' => $cm->id]));
+
+    // echo $OUTPUT->continue(new moodle_url('/mod/attendance/view.php', ['id' => $cm->id]));
 } else {
     $form->display();
 }

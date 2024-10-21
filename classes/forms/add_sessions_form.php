@@ -37,16 +37,36 @@ class add_sessions_form extends moodleform
     public function definition()
     {
         $mform = $this->_form;
+        $course = $this->_customdata['course'];
         $mform->addElement('hidden', 'cmid', $this->_customdata['cmid']);
         $mform->setType('cmid', PARAM_INT);
-        $mform->addElement('hidden', 'course', $this->_customdata['course']->id);
+        $mform->addElement('hidden', 'course', $course->id);
         $mform->setType('course', PARAM_INT);
         $mform->addElement('date_selector', 'fromdate', get_string('from'));
         $mform->addElement('date_selector', 'todate', get_string('to'));
-      
+        // Checkbox for compress calendars.
+        $mform->addElement('checkbox', 'compress', get_string('compact_calendar_name', 'local_scheduletool'));
+        $mform->setDefault('compress', 0);
+        // Button for refresh.
+        $mform->addElement('submit', 'refresh', get_string('refresh'));
+        // Default dates.
+        $mform->setDefault('fromdate', $course->startdate);
+        $mform->setDefault('todate', $course->enddate);
+        // Heading for calendars.
+        $mform->addElement('html', '<h3>' . get_string('copy_schedule', 'local_scheduletool') . '</h3>');        
         // Get course calendar.
         $course = $this->_customdata['course'];
-        $calendars = course_target::get_course_calendars($course); // TODO: add date range.
+        $compress = $this->_customdata['compress'];
+        $fromdate = $this->_customdata['fromdate'];
+        $todate = $this->_customdata['todate'];
+        $fromdate = $fromdate ? strtotime("{$fromdate['day']}-{$fromdate['month']}-{$fromdate['year']}"): $course->startdate;
+        $todate = $todate ? strtotime("{$todate['day']}-{$todate['month']}-{$todate['year']}"): $course->enddate;
+
+        $calendars = course_target::get_course_calendars($course,
+                 null,
+                 $fromdate,
+                 $todate,
+                 $compress);
         $id = 0;
        
         // Create a form checkbox for each calendar that has timetables.
@@ -72,9 +92,9 @@ class add_sessions_form extends moodleform
         }
         if ($id == 0)  {
             $mform->addElement('html', '<p>' . get_string('no_timetables', 'local_scheduletool') . '</p>');
-        } 
-        $mform->addElement('submit', 'submit', get_string('copy_schedule', 'local_scheduletool'));
+        } else {
+            $mform->addElement('submit', 'submit', get_string('copy_schedule', 'local_scheduletool'));
+        }
         $mform->addElement('cancel', 'cancel', get_string('cancel'));
-
     }
 }

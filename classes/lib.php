@@ -332,7 +332,7 @@ class lib
      * @param $todate int To date timestamp.
      * @return array topics structure.
      */
-    public static function get_local_topics($user, $fromdate = null, $todate = null)
+    public static function get_local_topics($user, $fromdate = null, $todate = null, bool $compress = false)
     {
         $cache_ttl = get_config('local_scheduletool', 'local_caches_ttl');
         // Use cache.
@@ -347,7 +347,7 @@ class lib
         // Cache miss or expired.
         $topics = [];
         if (get_config('local_scheduletool', 'export_courses_as_topics')) {
-            $courses = course_target::get_topics($user, $fromdate, $todate);
+            $courses = course_target::get_topics($user, $fromdate, $todate, $compress);
             $topics = array_merge($topics, $courses);
         }
         if (get_config('local_scheduletool', 'modattendance_enabled')) {
@@ -986,7 +986,9 @@ class lib
         $startweek = date('W', $start);
         $endweek = date('W', $end);
         for ($week = $startweek; $week <= $endweek; $week++) {
-            $weekstart = strtotime("monday this week", strtotime(date('Y', $start) . 'W' . $week));
+            $weekstart = strtotime("monday this week",
+                            strtotime(
+                                date('Y', $start) . 'W' . sprintf('%02d', $week)));
             foreach ($calendar->timetables as $timetable) {
                 $weekdays = explode(',', $timetable->weekdays);
                 foreach ($weekdays as $weekday) {

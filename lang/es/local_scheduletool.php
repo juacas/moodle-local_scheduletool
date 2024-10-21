@@ -87,10 +87,10 @@ $string['logs_enabled_description'] = 'Habilitar o deshabilitar los logs. Los lo
 
 $string['withoutschedule'] = 'Sin información de horario';
 $string['withschedule'] = 'Según horario docente';
-$string['compact_calendar_name'] = 'Comparctar calendario';
+$string['compact_calendar_name'] = 'Compactar calendario';
 $string['compact_calendar_description'] = 'Compactar calendarios de sesiones usando eventos de repetición con el mismo identificador para todos. Si se desactiva se usará un identificador por sesión.';
-$string['copy_schedule'] = 'Control de horarios';
-$string['copy_schedule_description'] = 'Copiar horarios oficiales a la actividad de mod_attendance';
+$string['copy_schedule'] = 'Traspasar horarios';
+$string['copy_schedule_description'] = 'Copiar horarios oficiales a la actividad de {$a}';
 $string['copy_shedule_course'] = 'Crea una actividad llamada "{$a->attendancename}"en el curso "{$a->coursename}" y copia los horarios oficiales para hacer seguimiento';
 $string['no_timetables'] = 'No hay horarios disponibles';
 $string['count_sessions_added'] = 'Se han añadido {$a} sesiones de seguimiento de asistencia.';

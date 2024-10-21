@@ -109,7 +109,8 @@ $todate = $todatestr ? strtotime($todatestr) : null;
 
 try {
     if ($user) {
-        $local_topics = lib::get_local_topics($user, );
+        $compress = get_config(plugin: 'local_scheduletool', name: 'compact_calendar');
+        $local_topics = lib::get_local_topics($user, compress: $compress);
     }
     // Get  proxyes topics.
     $remote_topics = lib::get_remote_topics($userid);

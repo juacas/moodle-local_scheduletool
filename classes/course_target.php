@@ -256,7 +256,7 @@ class course_target extends modattendance_target
      * @param int $todate timestamp
      * @return array of topics.
      */
-    static public function get_topics($user, int $fromdate = null, int $todate = null): array
+    static public function get_topics($user, int $fromdate = null, int $todate = null, bool $compress = false): array
     {
         // Collect all courses in which the user is teacher: Has any of:
         // 'mod/attendance:addinstance'
@@ -280,7 +280,7 @@ class course_target extends modattendance_target
                     continue;
                 }
 
-                $calendars = self::get_course_calendars($course, $user, $fromdate, $todate);
+                $calendars = self::get_course_calendars($course, $user, $fromdate, $todate, $compress);
                 foreach ($calendars as $calendar) {
                     
                     [$topicid, $info] = self::encode_topic_id($calendar, $course);
@@ -307,7 +307,7 @@ class course_target extends modattendance_target
      * @param int $todate
      * @return array calendars structure.
      */
-    static public function get_course_calendars($course, $user = null, int $fromdate = null, int $todate = null): array
+    static public function get_course_calendars($course, $user = null, int $fromdate = null, int $todate = null, bool $compress = false): array
     {
         $cache_ttl = get_config('local_scheduletool', 'local_caches_ttl');
         // Use cache.
@@ -329,7 +329,7 @@ class course_target extends modattendance_target
             }
            
             $results = self::get_schedule_for_course($course, $this_monday, $todate);
-            $calendars = self::parse_course_calendars_pod($course, $results);
+            $calendars = self::parse_course_calendars_pod($course, $results, $compress);
             lib::log_info(message: "Got calendar for course $course->id: $course->idnumber " . json_encode($calendars));
             // Default calendar entry.
             if (count($calendars) == 0) {
@@ -368,7 +368,7 @@ class course_target extends modattendance_target
             // Get redirected courses from course.
             $expandedcourses = lib::get_schedule_equivalent_courses($course);
             lib::log_info("Getting schedule for course $course->id with redirected courses: " . json_encode($expandedcourses));
-            // TODO: get all idnumbers.
+            
             foreach ($expandedcourses as $selectedcourse) {
                 // Get ids for rest service.
                 $codsigmas[] = self::parse_id_from_course($selectedcourse);
@@ -507,9 +507,10 @@ class course_target extends modattendance_target
      * Course name is followed by a coding in parenthesis that are to be ignored.
      * @param object $course
      * @param array  string $jsons
+     * @param bool $compress if true compress calendar grouping by weekdays and times.
      * @return array sessions structure.
      */
-    static public function parse_course_calendars_pod($course, array $jsons): array {
+    static public function parse_course_calendars_pod($course, array $jsons, bool $compress = false): array {
         $calendars = [];
         // Fuse json entries.
         $data = [];
@@ -518,9 +519,8 @@ class course_target extends modattendance_target
             $data = array_merge($data, $entry??[]);
         }
         
-        $calendars = lib::collect_calendars($data,
-                         get_config(plugin: 'local_scheduletool', name: 'compact_calendar'));
-        if (get_config(plugin: 'local_scheduletool', name: 'compact_calendar')) {
+        $calendars = lib::collect_calendars($data,$compress);
+        if ($compress) {
             $calendars = lib::compress_calendars($calendars);
         }
         return $calendars;

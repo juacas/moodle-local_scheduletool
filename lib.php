@@ -10,7 +10,7 @@
  *
  * @return void
  */
-function local_scheduletool_extend_settings_navigation(settings_navigation $settings, $context) {
+function local_scheduletool_extend_settings_navigation(settings_navigation $settings, object $context) {
     // Check copy_schedule_enabled setting.
     $copy_schedule_enabled = get_config('local_scheduletool', 'copy_schedule_enabled');
     if (!$copy_schedule_enabled) {
