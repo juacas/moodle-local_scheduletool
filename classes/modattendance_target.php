@@ -94,7 +94,7 @@ class modattendance_target extends target_base
      * @param mixed $description override the event description.
      * @return int
      */
-    public function create_session($opening_time = null, $description = null)
+    public function create_session(int|null $opening_time = null, $description = null)
     {
         if ($opening_time == null) {
             $opening_time = $this->event->get_opening_time();
@@ -165,21 +165,27 @@ class modattendance_target extends target_base
         global $USER;
         $member = $attendance->get_member();
         $user = \local_scheduletool\lib::get_user_enrol($this->config, $member, $this->course);
+        // Check if autoenrollment is enabled.
+        if (!$user && get_config('local_scheduletool', 'autoenrol_enabled')) {
+                $user = \local_scheduletool\lib::autoenrol_user($this->config, $member, $this->course);
+            }
+        // Temp users.
         if (!$user) {
             if (!\local_scheduletool\lib::is_tempusers_enabled($this->config)) {
-                $msg = get_string('notifications_user_unknown_notmarked', 'local_scheduletool', $member);
+                    $msg = get_string('notifications_user_unknown_notmarked', 'local_scheduletool', $member);
 
-                lib::log_error($msg);
-                $this->errors[] = $msg;
-                return;
-            } else {
-                $tempuser = \local_scheduletool\lib::get_tempuser($attendance, $this->course);
-                if (!$tempuser) {
-                    $this->errors[] = $attendance;
+                    lib::log_error($msg);
+                    $this->errors[] = $msg;
                     return;
+                } else {
+                    $tempuser = \local_scheduletool\lib::get_tempuser($attendance, $this->course);
+                    if (!$tempuser) {
+                        $this->errors[] = $attendance;
+                        return;
+                    }
                 }
             }
-        }
+        
         // Get the status from the list of possible statuses.
         $status = $this->get_status($attendance);
         if (!$status) {
@@ -247,7 +253,7 @@ class modattendance_target extends target_base
                 $description = content_to_text($session->description, FORMAT_MOODLE);
                 $info = substr("{$course->fullname}: " . userdate($session->sessdate) . '(' . format_time($session->duration) . ')', 0, 100);
                 list($topicid) = self::encode_topic_id(null,  $cm->id, $session->id);
-                $topics[] = (object) [
+                $topic = (object) [
                     'topicId' => $topicid,
                     'name' => $att->name . " - " . $description,
                     'info' => $info, // Max 100 chars.
@@ -255,6 +261,14 @@ class modattendance_target extends target_base
                     'tag' => substr("{$course->shortname}/{$att->name}", 0, 100), // Max 100 chars.
                     'calendar' => self::get_single_day_calendar($session, $info),
                 ];
+                // Find users in activity.
+                if (get_config('local_scheduletool', 'userlist_enabled')) {
+                    $userfield = get_config('local_scheduletool', 'member_id');
+                    $users = get_enrolled_users(\context_course::instance($course->id), 'mod/attendance:canbelisted' , 0, 'u.' . $userfield);
+                    $userlist = array_keys($users);
+                    $topic->users = $userlist;
+                }
+                $topics[] = $topic;
             }
         }
         return $topics;

@@ -155,7 +155,9 @@ if ($hassiteconfig) {
             )
         );
     }
-    // Hybridteaching section heading.
+    /*************************************
+     * Hybridteaching section heading.
+     ************************************/
     $settings->add(
         new admin_setting_heading(
             'local_scheduletool/modhybridteaching_heading',
@@ -184,7 +186,9 @@ if ($hassiteconfig) {
             )
         );
     }
-    // Heading for field mapping.
+    /***********************************
+     * Heading for field mapping.
+     **********************************/
     $settings->add(
         new admin_setting_heading(
             'local_scheduletool/field_mapping_heading',
@@ -234,7 +238,25 @@ if ($hassiteconfig) {
             $userfields
         )
     );
-
+    // Checkbox for enabling user list in topics.
+    $settings->add(
+        new admin_setting_configcheckbox(
+            'local_scheduletool/userlist_enabled',
+            new lang_string('userlist_enabled_name', 'local_scheduletool'),
+            new lang_string('userlist_enabled_description', 'local_scheduletool'),
+            0
+        )
+    );
+    // Checkbox for enabling autoenrolment functionality.
+    $settings->add(
+        new admin_setting_configcheckbox(
+            'local_scheduletool/autoenrol_enabled',
+            new lang_string('autoenrol_enabled_name', 'local_scheduletool'),
+            new lang_string('autoenrol_enabled_description', 'local_scheduletool'),
+            0
+        )
+    );
+    // Notifications.
     $settings->add(
         new admin_setting_configcheckbox(
             'local_scheduletool/notifications_enabled',
@@ -281,7 +303,6 @@ if ($hassiteconfig) {
             1
         )
     );
-    
     
      // Enable only in these course categories.
      $settings->add(

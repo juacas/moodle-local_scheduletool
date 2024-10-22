@@ -118,3 +118,7 @@ $string['copy_schedule_description'] = 'Copy schedule from oficial schedules to 
 $string['copy_shedule_course'] = 'Create a activity named "{$a->attendancename}" in course "{$a->coursename}" and copy official schedules to track attendance';
 $string['no_timetables'] = 'No timetables available';
 $string['count_sessions_added'] = '{$a} attendance tracking sessions added.';
+$string['userlist_enabled_name'] = 'Enable user list for each topic.';
+$string['userlist_enabled_description'] = 'Enable or disable the inclussion of potencial attendants for each topic.';
+$string['autoenrol_enabled_name'] = 'Enable autoenrolment';
+$string['autoenrol_enabled_description'] = 'Enable or disable autoenrolment if a course has an autoenrollment method named "AttendanceEnrollment".';

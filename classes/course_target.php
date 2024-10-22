@@ -157,7 +157,8 @@ class course_target extends modattendance_target
                 lib::log_info("Attendance session {$session->id} selected for update.");
             } else {
                 // Create a new session.
-                $this->sessionid = $this->create_session();
+                $openingtime = strtotime($date . ' ' . $time);
+                $this->sessionid = $this->create_session($openingtime, $sufix);
                 
                 lib::log_info('Attendance session created: ' . $this->sessionid );
             }
@@ -285,7 +286,7 @@ class course_target extends modattendance_target
                     
                     [$topicid, $info] = self::encode_topic_id($calendar, $course);
 
-                    $topics[] = (object) [
+                    $topic = (object) [
                         'name' => $course->shortname,
                         // Only 100 characters.
                         'info' => $info, //substr($course->fullname, 0, 100), // Max 100 chars.
@@ -294,6 +295,14 @@ class course_target extends modattendance_target
                         'tag' => 'course',
                         'calendar' => $calendar,
                     ];
+                    // Find users in course.
+                    if (get_config('local_scheduletool', 'userlist_enabled')) {
+                        $userfield = get_config('local_scheduletool', 'member_id');
+                        $users = get_enrolled_users(\context_course::instance($course->id), null, 0, 'u.' . $userfield);
+                        $userlist = array_keys($users);
+                        $topic->users = $userlist;
+                    }
+                    $topics[] = $topic;
                 }
             }
         }

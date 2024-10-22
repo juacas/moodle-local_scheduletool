@@ -74,18 +74,19 @@ class lib
     public static function get_config()
     {
         $config = get_config('local_scheduletool');
-        if (
-            empty($config->module_name) || !isset($config->module_section)
-            || empty($config->course_id) || empty($config->member_id)
-            || empty($config->user_id) || !isset($config->tempusers_enabled)
-            || !isset($config->notifications_enabled)
-        ) {
-            self::log_error('Plugin misconfigured: ' . json_encode($config));
-            return false;
-        } else {
-            self::log_info('Plugin configured: ' . json_encode($config));
-            return $config;
-        }
+        // if (
+        //     empty($config->module_name) || !isset($config->module_section)
+        //     || empty($config->course_id) || empty($config->member_id)
+        //     || empty($config->user_id) || !isset($config->tempusers_enabled)
+        //     || !isset($config->notifications_enabled)
+        // ) {
+        //     self::log_error('Plugin misconfigured: ' . json_encode($config));
+        //     return false;
+        // } else {
+        //     self::log_info('Plugin configured: ' . json_encode($config));
+        //     return $config;
+        // }
+        return $config;
     }
 
     public static function get_module()
@@ -112,7 +113,13 @@ class lib
             return $courses[array_keys($courses)[0]];
         }
     }
-
+    /**
+     * Check if $member is enrolled y the course and return the user object.
+     * @param mixed $config
+     * @param mixed $member
+     * @param mixed $course
+     * @return mixed
+     */
     public static function get_user_enrol($config, $member, $course)
     {
         global $DB;
@@ -310,7 +317,12 @@ class lib
             self::log_info('Notification sent: ' . $message->fullmessagehtml);
         }
     }
-
+    /**
+     * Find the user with the given member data.
+     * @param mixed $config
+     * @param \local_scheduletool\member $member
+     * @return mixed
+     */
     public static function get_user($config, member $member)
     {
         global $DB;
@@ -324,6 +336,32 @@ class lib
             self::log_info($message);
             return reset($users);
         }
+    }
+    /**
+     * Autoenrol member if course has a self-enrolment method named 'AttendanceEnrollment'.
+     * 
+     */
+    public static function autoenrol_user($config, $member, $course) {
+        global $DB;
+        $enrolinstances = enrol_get_instances($course->id, true);
+        $enrolinstance = array_filter($enrolinstances, function ($instance) {
+            return $instance->enrol === 'self' && $instance->name === 'AttendanceEnrollment';
+        });
+        if (count($enrolinstance) != 1) {
+            self::log_error('Self-enrolment method not found in course: ' . $course->id);
+            return false;
+        }
+        $instance = reset($enrolinstance);
+        $plugin = enrol_get_plugin('self');
+        // Find userid from member data.
+        $user = self::get_user($config, $member);
+        
+        if (!$user) {
+            self::log_error("User not found: " . json_encode($member));
+            return false;
+        }
+        $plugin->enrol_user($instance, $user->id, $instance->roleid);
+        return $user;
     }
     /**
      * Get local topics for the given user.

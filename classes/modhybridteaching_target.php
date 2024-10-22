@@ -18,7 +18,7 @@ namespace local_scheduletool;
 use \mod_hybridteaching\controller\sessions_controller;
 use \mod_hybridteaching\controller\attendance_controller;
 defined('MOODLE_INTERNAL') || die();
-require_once ($CFG->dirroot . '/mod/hybridteaching/lib.php');
+require_once($CFG->dirroot . '/mod/hybridteaching/lib.php');
 /**
  * Class to implement entities that can be targets of attendance marking.
  */
@@ -44,7 +44,7 @@ class modhybridteaching_target extends target_base
         if ($this->cm) {
             $hybridteaching = $DB->get_record('hybridteaching', array('id' => $this->cm->instance), '*', MUST_EXIST);
             $this->sessioncontroller = new sessions_controller($hybridteaching);
-            $this->attendancecontroller =  new attendance_controller($hybridteaching);
+            $this->attendancecontroller = new attendance_controller($hybridteaching);
             $this->hybridteaching = $hybridteaching;
         }
     }
@@ -58,7 +58,7 @@ class modhybridteaching_target extends target_base
     public function check_configuration()
     {
         // Get statuses configured in the attendance activity.
-       // TODO: Conditions?
+        // TODO: Conditions?
     }
     /**
      * Register a single attendance.
@@ -71,14 +71,14 @@ class modhybridteaching_target extends target_base
         $user = \local_scheduletool\lib::get_user_enrol($this->config, $attendance->get_member(), $this->course);
         // TODO: Supports temp users???
         if (!$user) {
-           throw new \Exception('User not found: ' . $attendance );
+            throw new \Exception('User not found: ' . $attendance);
         }
         try {
-        // Mark the attendance to the session.
-        $currentuser = $USER;
-        $USER = $this->logtaker_user;
-        $this->set_attendance_status($user, HYBRIDTEACHING_ATTSTATUS_VALID);
-        $USER = $currentuser;
+            // Mark the attendance to the session.
+            $currentuser = $USER;
+            $USER = $this->logtaker_user;
+            $this->set_attendance_status($user, HYBRIDTEACHING_ATTSTATUS_VALID);
+            $USER = $currentuser;
         } catch (\Exception $e) {
             lib::log_error($e);
             $this->errors[] = $e->getMessage();
@@ -90,42 +90,43 @@ class modhybridteaching_target extends target_base
      * TODO: Refactor in hybridteaching
      * @return mixed
      */
-    private function set_attendance_status($user, $status) {
-            global $DB, $CFG, $USER;
-            $session = $this->get_session();
-            $attendance = attendance_controller::hybridteaching_get_attendance($session, $user->id);
-            $timemodified = (new \DateTime('now', \core_date::get_server_timezone_object()))->getTimestamp();
-            if ($attendance) {
-                $attendance->status = $status;
-                $attendance->usermodified = $USER->id;
-                $attendance->timemodified = $timemodified;
-                $status ? $attendance->connectiontime = $session->duration : $attendance->connectiontime = 0;
-                $DB->update_record('hybridteaching_attendance', $attendance);
-    
-                list($course, $cm) = get_course_and_cm_from_instance($attendance->hybridteachingid, 'hybridteaching');
-                $event = \mod_hybridteaching\event\attendance_updated::create([
-                    'objectid' => $attendance->hybridteachingid,
-                    'context' => \context_module::instance($cm->id),
-                    'relateduserid' => $attendance->userid,
-                    'other' => [
-                        'sessid' => $attendance->sessionid,
-                        'attid' => $attendance->id,
-                    ],
-                ]);
-    
-                $event->trigger();
-    
-                // Update completion state.
-                $hybridteaching = $DB->get_record('hybridteaching', ['id' => $attendance->hybridteachingid]);
-                $cm = $this->cm;
-    
-                $completion = new \completion_info($course);
-                if ($completion->is_enabled($cm) && $hybridteaching->completionattendance) {
-                    $status ? $completion->update_state($cm, COMPLETION_COMPLETE, $attendance->userid) :
-                        $completion->update_state($cm, COMPLETION_INCOMPLETE, $attendance->userid);
-                }
+    private function set_attendance_status($user, $status)
+    {
+        global $DB, $CFG, $USER;
+        $session = $this->get_session();
+        $attendance = attendance_controller::hybridteaching_get_attendance($session, $user->id);
+        $timemodified = (new \DateTime('now', \core_date::get_server_timezone_object()))->getTimestamp();
+        if ($attendance) {
+            $attendance->status = $status;
+            $attendance->usermodified = $USER->id;
+            $attendance->timemodified = $timemodified;
+            $status ? $attendance->connectiontime = $session->duration : $attendance->connectiontime = 0;
+            $DB->update_record('hybridteaching_attendance', $attendance);
+
+            list($course, $cm) = get_course_and_cm_from_instance($attendance->hybridteachingid, 'hybridteaching');
+            $event = \mod_hybridteaching\event\attendance_updated::create([
+                'objectid' => $attendance->hybridteachingid,
+                'context' => \context_module::instance($cm->id),
+                'relateduserid' => $attendance->userid,
+                'other' => [
+                    'sessid' => $attendance->sessionid,
+                    'attid' => $attendance->id,
+                ],
+            ]);
+
+            $event->trigger();
+
+            // Update completion state.
+            $hybridteaching = $DB->get_record('hybridteaching', ['id' => $attendance->hybridteachingid]);
+            $cm = $this->cm;
+
+            $completion = new \completion_info($course);
+            if ($completion->is_enabled($cm) && $hybridteaching->completionattendance) {
+                $status ? $completion->update_state($cm, COMPLETION_COMPLETE, $attendance->userid) :
+                    $completion->update_state($cm, COMPLETION_INCOMPLETE, $attendance->userid);
             }
-            return $attendance;
+        }
+        return $attendance;
     }
     static public function get_target_name()
     {
@@ -159,16 +160,11 @@ class modhybridteaching_target extends target_base
                 continue;
             }
             $sessions = [];
-            
-            $sessionsinprogress = sessions_controller::get_sessions_in_progress($hybridteaching->id);
-            if (count($sessionsinprogress) == 0) {
-                $hybridsessioncontrol = new sessions_controller($hybridteaching);
-                $sessionnext = $hybridsessioncontrol->get_next_session();
-                if ($sessionnext) {
-                    $sessions = array_merge([$sessionnext], $sessions);
-                }
-            } else {
-                $sessions = $sessionsinprogress;
+
+            $hybridsessioncontrol = new sessions_controller($hybridteaching);
+            $sessionnext = $hybridsessioncontrol->get_next_session();
+            if ($sessionnext) {
+                $sessions = array_merge([$sessionnext], $sessions);
             }
 
             // Each session is a topic.
@@ -176,14 +172,22 @@ class modhybridteaching_target extends target_base
                 // Create info text from dates.
                 $description = content_to_text($session->description, FORMAT_MOODLE);
                 $info = "{$course->fullname}: " . userdate($session->starttime) . '(' . format_time($session->duration) . ')';
-                $topics[] = (object) [
+                $topic = (object) [
                     'topicId' => $prefix . '-hybridteaching-' . $cm->id . '-' . $session->id,
                     'name' => $course->shortname . ":" . $hybridteaching->name . " " . $description,
                     'info' => substr($info, 0, 100), // Max 100 characters.
                     'externalIntegration' => true,
                     'tag' => substr("{$hybridteaching->name}", 0, 100), // Max 100 characters.
                 ];
-            }
+                // Find users in activity.
+                if (get_config('local_scheduletool', 'userlist_enabled')) {
+                    $userfield = get_config('local_scheduletool', 'member_id');
+                    $users = get_enrolled_users(\context_course::instance($course->id), 'mod/hybridteaching:attendance' , 0, 'u.' . $userfield);
+                    $userlist = array_keys($users);
+                    $topic->users = $userlist;
+                }
+                $topics[] = $topic;
+            }   
         }
         return $topics;
     }
