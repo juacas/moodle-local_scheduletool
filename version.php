@@ -17,7 +17,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_scheduletool';
-$plugin->release = '1.5.0';
+$plugin->release = '1.0.0';
 $plugin->version = 2024102100;
 $plugin->requires = 2016120505;
 $plugin->maturity = MATURITY_BETA;
