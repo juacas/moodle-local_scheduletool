@@ -122,3 +122,6 @@ $string['userlist_enabled_name'] = 'Enable user list for each topic.';
 $string['userlist_enabled_description'] = 'Enable or disable the inclussion of potencial attendants for each topic.';
 $string['autoenrol_enabled_name'] = 'Enable autoenrolment';
 $string['autoenrol_enabled_description'] = 'Enable or disable autoenrolment if a course has an autoenrollment method named "AttendanceEnrollment".';
+$string['create_events'] = 'Sessions will have events in calendar.';
+$string['delete_events'] = 'Sessions will not have events in calendar.';
+$string['calendar'] = 'Calendar';

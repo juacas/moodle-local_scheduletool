@@ -26,18 +26,17 @@ use local_scheduletool\modattendance_target;
 use local_scheduletool\target_base;
 
 require_once(__DIR__ . '/../../config.php');
-
 // Shows a form to select date range to import sessions.
-
 
 // Params.
 $cmid = optional_param('cmid', null, PARAM_INT);
 $courseid = optional_param('course', null, PARAM_INT);
-
+$returnurl = '';
 if ($cmid) {
     [$course, $cm] = get_course_and_cm_from_cmid($cmid, 'attendance');
     $context = context_module::instance($cm->id);
     $description = get_string('copy_schedule_description', 'local_scheduletool', $cm->name);
+    $returnurl = new moodle_url('/mod/attendance/view.php', ['id' => $cm->id]);
 } else {
     $course = get_course($courseid);
     $cm = null;
@@ -47,6 +46,7 @@ if ($cmid) {
         'local_scheduletool',
         ['coursename' => $course->fullname, 'attendancename' => get_config('local_scheduletool', 'module_name')]
     );
+    $returnurl = new moodle_url('/course/view.php', ['id' => $course->id]);
 }
 
 require_course_login($course, true, $cm);
@@ -58,8 +58,7 @@ $PAGE->set_title(get_string('copy_schedule', 'local_scheduletool'));
 $PAGE->set_heading(get_string('copy_schedule', 'local_scheduletool'));
 $PAGE->set_pagelayout('standard');
 
-echo $OUTPUT->header();
-echo $OUTPUT->notification($description, 'info', false);
+
 
 // Check copy_schedule_enabled setting.
 $copy_schedule_enabled = get_config('local_scheduletool', 'copy_schedule_enabled');
@@ -70,6 +69,7 @@ if (!$copy_schedule_enabled) {
 }
 $fromdate = optional_param_array('fromdate', null, PARAM_RAW);
 $todate = optional_param_array('todate', null, PARAM_RAW);
+$sessioncount = 0;
 
 $form = new \local_scheduletool\forms\add_sessions_form(
     null,
@@ -83,33 +83,19 @@ $form = new \local_scheduletool\forms\add_sessions_form(
 );
 
 if ($form->is_cancelled()) {
-    redirect(new moodle_url('/mod/attendance/view.php', ['id' => $cm->id]));
+    redirect( $returnurl);
 } else if ($data = $form->get_data()) {
     // Check action: Refresh or add.
     if (isset($data->refresh)) {
-        $form->display();
+       // $form->display();
     } else {
         // Extract selected calendars.
-        $calendars = [];
-        $sessioncount = 0;
         foreach ($data as $key => $value) {
-            if (strlen($key) > 50 && $value == "1") {
-                $calendar = json_decode(base64_decode($key));
+            if (str_starts_with($key, 'session') && $value != 0) {
+                $calendar = json_decode(base64_decode($value));
 
-                // If instance has static idnumber set use course_target else attendance_target.
-                if ($cm == null || ($cm->idnumber === local_scheduletool\lib::CM_IDNUMBER && $cm->deletioninprogress === 0)) {
-                    list($topicid) = course_target::encode_topic_id($calendar, $course);
-                } else {
-                    // Null sesion
-                    list($topicid) = modattendance_target::encode_topic_id($calendar, $cm->id, null);
-                }
-                $calendars[] = $calendar;
-
-
-                $startweekday = $calendar->timetables[0]->weekdays;
                 $dates = local_scheduletool\lib::expand_dates_from_calendar($calendar);
                 foreach ($dates as $date) {
-                    // Format $calendar-> "2024-08-21T03:52:19+0000"
                     // Create a mock event.
                     $openingDate = $date->date;
                     $closingDate = $date->date;
@@ -118,6 +104,18 @@ if ($form->is_cancelled()) {
                     $eventOpeningTime = date('c', strtotime($openingDate . ' ' . $openingTime));
                     $eventClosingTime = date('c', strtotime($closingDate . ' ' . $closingTime));
                     $useridfield = get_config('local_scheduletool', 'user_id');
+                    $onedaycalendar = clone($calendar);
+                    $onedaycalendar->startDate = $date->date;
+                    $onedaycalendar->endDate = $date->date;
+                    $onedaycalendar->timetables = [$date];
+                    // Encode topicID.
+                    // If instance has static idnumber set use course_target else attendance_target.
+                    if ($cm == null || ($cm->idnumber === local_scheduletool\lib::CM_IDNUMBER && $cm->deletioninprogress === 0)) {
+                        list($topicid) = course_target::encode_topic_id($onedaycalendar, $course);
+                    } else {
+                        // Null sesion: search or create.
+                        list($topicid) = modattendance_target::encode_topic_id($onedaycalendar, $cm->id, null);
+                    }
                     $eventobj = (object) [
                         'topic' => (object) [
                             'topicId' => $topicid,
@@ -138,6 +136,7 @@ if ($form->is_cancelled()) {
                     ];
                     $event = new local_scheduletool\event($eventobj);
                     $att_target = target_base::get_target($event, get_config('local_scheduletool'));
+                    $att_target->set_create_calendar_events(isset($data->createevents) && $data->createevents == "1" );
                     // Force to get session.
                     $session = $att_target->get_session();
                     if ($session) {
@@ -146,12 +145,12 @@ if ($form->is_cancelled()) {
                 }
             }
         }
-        echo $OUTPUT->notification(get_string('count_sessions_added', 'local_scheduletool', $sessioncount));
     }
 
     // echo $OUTPUT->continue(new moodle_url('/mod/attendance/view.php', ['id' => $cm->id]));
-} else {
-    $form->display();
-}
-
+} 
+echo $OUTPUT->header();
+echo $OUTPUT->notification($description, 'info', false);
+echo $OUTPUT->notification(get_string('count_sessions_added', 'local_scheduletool', $sessioncount));
+$form->display();
 echo $OUTPUT->footer();

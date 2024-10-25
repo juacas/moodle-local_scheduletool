@@ -35,6 +35,7 @@ abstract class target_base
     public $config;
     public $logtaker_user;
     public $prefix;
+    public $createcalendarevent = false;
 
     public function __construct(object $event, $config)
     {
@@ -154,6 +155,13 @@ abstract class target_base
             $classname = __NAMESPACE__ . '\\mod' . $type . '_target';
         }
         return new $classname($event, $config);
+    }
+    /**
+     * Enable the creation of calendar events.
+    */
+    public function set_create_calendar_events(bool $create)
+    {
+        $this->createcalendarevent = $create;
     }
     /**
      * Get the session object.

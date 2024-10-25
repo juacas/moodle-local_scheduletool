@@ -49,9 +49,10 @@ class modattendance_target extends target_base
             // Search compatible session by event contents.
             $sessions = $this->search_sessions();
             if (count($sessions) > 0) {
-                $this->sessionid = reset($sessions)->id;
+                $session = reset($sessions);
+                $this->sessionid = $session->id;
             } else {
-                $this->sessionid = $this->create_session();
+                $this->sessionid = $this->create_session(null, null, $this->createcalendarevent);
             }
         }
 
@@ -60,7 +61,11 @@ class modattendance_target extends target_base
             "grouptype" => 0
         ]; // Patch attendance structure.
 
-        return $this->att_struct->get_session_info($this->sessionid);
+        $session = $this->att_struct->get_session_info($this->sessionid);
+        // Update createcalendarevent if needed.
+        $session->calendarevent = $this->createcalendarevent ? 1 : 0;
+        attendance_update_calendar_event($session);
+        return $session;
     }
     /**
      * Find a session with the same opening time, cmid, description, etc.
@@ -92,9 +97,10 @@ class modattendance_target extends target_base
      * Adda new session to the attendance activity.
      * @param mixed $opening_time override the event opening time.
      * @param mixed $description override the event description.
+     * @param mixed $createcalendarevent create a calendar event for the session.
      * @return int
      */
-    public function create_session(int|null $opening_time = null, $description = null)
+    public function create_session(int|null $opening_time = null, $description = null, $createcalendarevent = false)
     {
         if ($opening_time == null) {
             $opening_time = $this->event->get_opening_time();
@@ -109,7 +115,7 @@ class modattendance_target extends target_base
         $session->description = $description;
         $session->descriptionitemid = -1;
         $session->descriptionformat = FORMAT_PLAIN;
-        $session->calendarevent = 0; // Disable calendar event creation.
+        $session->calendarevent = $createcalendarevent ? 1 : 0;
         $session->timemodified = time();
         $session->statusset = 0;
         $session->absenteereport = 1;

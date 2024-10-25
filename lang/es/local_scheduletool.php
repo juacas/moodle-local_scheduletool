@@ -94,3 +94,6 @@ $string['copy_schedule_description'] = 'Copiar horarios oficiales a la actividad
 $string['copy_shedule_course'] = 'Crea una actividad llamada "{$a->attendancename}"en el curso "{$a->coursename}" y copia los horarios oficiales para hacer seguimiento';
 $string['no_timetables'] = 'No hay horarios disponibles';
 $string['count_sessions_added'] = 'Se han añadido {$a} sesiones de seguimiento de asistencia.';
+$string['create_events'] = 'Las sesiones se añadirán al calendario';
+$string['delete_events'] = 'Las sesiones no se reflejarán en el calendario';
+$string['calendar'] = 'Calendario';

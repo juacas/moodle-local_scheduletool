@@ -25,6 +25,7 @@ require_once($CFG->dirroot . '/user/lib.php');
 class lib
 {
     const WEEK_DAYS = ["L", "M", "X", "J", "V", "S", "D"];
+    const WEEK_DAYS_I18N = [ 'monday' => 'L', 'tuesday' => 'M', 'wednesday' => 'X', 'thursday' => 'J', 'friday' => 'V', 'saturday' => 'S', 'sunday' => 'D'];
     const CM_IDNUMBER = 'local_scheduletool';
     // TODO: i18n status descriptions.
     const STATUS_DESCRIPTIONS = array(
@@ -1031,11 +1032,13 @@ class lib
                 $weekdays = explode(',', $timetable->weekdays);
                 foreach ($weekdays as $weekday) {
                     // Translate weekday to strtotime weekday.
-                    $weekday = array_search($weekday, lib::WEEK_DAYS) + 1;
-                    $date = $weekstart + ($weekday - 1) * 86400;
+                    $weekdaynum = array_search($weekday, lib::WEEK_DAYS) + 1;
+                    $date = $weekstart + ($weekdaynum - 1) * 86400;
 
                     if ($date <= $end) {
                         $dates[] = (object) [
+                            'weekdays' => $weekday,
+                            'weekdaynum' => $weekdaynum,
                             'date' => date('Y-m-d', $date),
                             'startTime' => $timetable->startTime,
                             'endTime' => $timetable->endTime,
@@ -1048,5 +1051,17 @@ class lib
 
         return $dates;
 
+    }
+    /**
+     * Translate a set of weekdays with format LMXJVSD to a set of weekdays with format Mon, Tue, Wed, Thu, Fri, Sat, Sun. 
+     */
+    public static function translate_weekdays($weekdays) {
+        $weekdays = explode(',', $weekdays);
+        $translated = [];
+        foreach ($weekdays as $weekday) {
+            $translatedkey = array_search($weekday, lib::WEEK_DAYS_I18N);
+            $translated[] = get_string($translatedkey, 'calendar');
+        }
+        return implode(',', $translated);        
     }
 }

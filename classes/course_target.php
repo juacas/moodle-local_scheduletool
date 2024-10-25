@@ -107,15 +107,14 @@ class course_target extends modattendance_target
         }
         // If timetable has only one timetable use info from it.
         if (isset($calendar->timetables) && count($calendar->timetables) == 1) {
-            // Get week number.
-            // $weeknumber = date('W', strtotime($calendar->startDate));
-            // $info = $calendar->timetables[0]->info . get_string('week') . ' ' . $weeknumber;
-            $info = $calendar->timetables[0]->info . ' ' 
-                    . $calendar->startDate . ' '
-                    . $calendar->timetables[0]->startTime;
+            $dates = lib::expand_dates_from_calendar($calendar);
+            $date = reset($dates);
+            $info = $date->info . ' ' 
+                    . $date->date . ' '
+                    . $date->startTime;
             $truncatedinfo = substr($info, 0, 50);
-            $sufix = $calendar->startDate . '-' 
-                    . $calendar->timetables[0]->startTime . '-'
+            $sufix = $date->date . '-' 
+                    . $date->startTime . '-'
                     . $truncatedinfo;
         }
 
@@ -158,7 +157,7 @@ class course_target extends modattendance_target
             } else {
                 // Create a new session.
                 $openingtime = strtotime($date . ' ' . $time);
-                $this->sessionid = $this->create_session($openingtime, $sufix);
+                $this->sessionid = $this->create_session($openingtime, $sufix, $this->createcalendarevent);
                 
                 lib::log_info('Attendance session created: ' . $this->sessionid );
             }
