@@ -69,7 +69,9 @@ class add_sessions_form extends moodleform
                  $todate,
                  $compress);
         $id = 0;
-       
+        // Checkbox controller.
+        $this->add_checkbox_controller('session', null, null, 0);
+
         // Create a form checkbox for each calendar that has timetables.
         foreach ($calendars as $calendar) {
             if (empty($calendar->timetables)) {
@@ -94,12 +96,12 @@ class add_sessions_form extends moodleform
                 }
                 $name .= " {$timetable->startTime}-{$timetable->endTime} {$timetable->info} ";
                 $val = base64_encode(json_encode($onedaycalendar));
-                $check = new \MoodleQuickForm_advcheckbox("session$id", $name, null, null, [0, $val]);
+                $check = new \MoodleQuickForm_advcheckbox("session$id", $name, null, ['group'=>'session'], [0, $val]);
                 $mform->addElement($check);
                 $id++;
             }
         }
-        
+
         if ($id == 0)  {
             $mform->addElement('html', '<p>' . get_string('no_timetables', 'local_scheduletool') . '</p>');
         } else {
