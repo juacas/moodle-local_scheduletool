@@ -162,7 +162,7 @@ class modhybridteaching_target extends target_base
             $sessions = [];
 
             $hybridsessioncontrol = new sessions_controller($hybridteaching);
-            $sessionnext = $hybridsessioncontrol->get_next_session();
+            $sessionnext = $hybridsessioncontrol->get_next_session($cm);
             if ($sessionnext) {
                 $sessions = array_merge([$sessionnext], $sessions);
             }

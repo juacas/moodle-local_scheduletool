@@ -22,43 +22,43 @@
  * - HybridTeaching sessions: topicId encoded with course-module-session. (TODO)
  *
  * • topicId: Identificador único de la asignatura. Es un campo obligatorio y es muy importante
-    que sea único, no puede haber varias asignaturas con el mismo identificador para un 
-    organizador.
-    • name: Nombre de la asignatura. Es un campo obligatorio si no se envía el campo names.
-    • names: Nombre de la asignatura en varios idiomas. Este campo es obligatorio si no se 
-    envía el campo anterior name.
-    • info: información adicional al nombre de la asignatura que permite al organizador 
-    identificar sin ningún género de dudas la asignatura al incluir la titulación, el grupo, el curso, 
-    etc. Es un campo obligatorio, aunque su contenido puede estar vacío.
-    • infos: información adicional de la asignatura en varios idiomas. Es obligatorio si no se 
-    envía el campo anterior info.
-    • calendar: objeto opcional con los horarios de la asignatura y los siguientes campos:
-    o startDate: fecha inicial del curso o del período en el que aplican los horarios. El 
-    formato de la fecha debe ser YYYY-MM-DD.
-    o endDate: fecha final del curso o del período en el que aplican los horarios. El 
-    formato de la fecha debe ser YYYY-MM-DD.
-    o timetables: array de horarios y que contienen los siguientes campos:
-    § weekdays: días de la semana en que se aplica el horario, indicando sus 
-    iniciales en mayúsculas y separados por comas, con excepción del 
-    miércoles al que le corresponde una “X”
-    § startTime: hora inicial de la actividad
-    § endTime: hora final de la actividad
-    § info: información adicional donde se puede añadir información del aula o 
-    cualquier otro dato pertinente.
-    § infos: información adicional del horario en varios idiomas. Es obligatorio 
-    si se envía un horario y no se envía el campo anterior info.
-    • externalIntegration: booleano que indica si la actividad debe ser integrada con algún 
-    sistema externo, como por ejemplo Moodle. Si su valor es true las asistencias a la actividad 
-    se enviarán a los sistemas externos con los que se haya integrado la aplicación. Si su 
-    valor es false esas asistencias no se enviarán al sistema externo. Si no se devuelve en la 
-    llamada se asume que su valor es true.
-    • tag: etiqueta asociada a la actividad que puede servir posteriormente para agrupar 
-    actividades o para filtrar las asistencias. Cada etiqueta puede tener un significado diferente 
-    en cada instalación. Por ejemplo, cada etiqueta podría representar el centro donde se 
-    AppCRUE – Control de asistencia. API de integración 
-    REST 7
-    imparte la asignatura, el departamento, la titulación, etc. Su valor no debe incluir espacios 
-    en blanco. Es un parámetro opcional.
+ *   que sea único, no puede haber varias asignaturas con el mismo identificador para un 
+ *   organizador.
+ *   • name: Nombre de la asignatura. Es un campo obligatorio si no se envía el campo names.
+ *   • names: Nombre de la asignatura en varios idiomas. Este campo es obligatorio si no se 
+ *   envía el campo anterior name.
+ *   • info: información adicional al nombre de la asignatura que permite al organizador 
+ *   identificar sin ningún género de dudas la asignatura al incluir la titulación, el grupo, el curso, 
+ *   etc. Es un campo obligatorio, aunque su contenido puede estar vacío.
+ *   • infos: información adicional de la asignatura en varios idiomas. Es obligatorio si no se 
+ *   envía el campo anterior info.
+ *   • calendar: objeto opcional con los horarios de la asignatura y los siguientes campos:
+ *   o startDate: fecha inicial del curso o del período en el que aplican los horarios. El 
+ *   formato de la fecha debe ser YYYY-MM-DD.
+ *   o endDate: fecha final del curso o del período en el que aplican los horarios. El 
+ *   formato de la fecha debe ser YYYY-MM-DD.
+ *   o timetables: array de horarios y que contienen los siguientes campos:
+ *   § weekdays: días de la semana en que se aplica el horario, indicando sus 
+ *   iniciales en mayúsculas y separados por comas, con excepción del 
+ *   miércoles al que le corresponde una “X”
+ *   § startTime: hora inicial de la actividad
+ *   § endTime: hora final de la actividad
+ *   § info: información adicional donde se puede añadir información del aula o 
+ *   cualquier otro dato pertinente.
+ *   § infos: información adicional del horario en varios idiomas. Es obligatorio 
+ *   si se envía un horario y no se envía el campo anterior info.
+ *   • externalIntegration: booleano que indica si la actividad debe ser integrada con algún 
+ *   sistema externo, como por ejemplo Moodle. Si su valor es true las asistencias a la actividad 
+ *   se enviarán a los sistemas externos con los que se haya integrado la aplicación. Si su 
+ *   valor es false esas asistencias no se enviarán al sistema externo. Si no se devuelve en la 
+ *   llamada se asume que su valor es true.
+ *   • tag: etiqueta asociada a la actividad que puede servir posteriormente para agrupar 
+ *   actividades o para filtrar las asistencias. Cada etiqueta puede tener un significado diferente 
+ *   en cada instalación. Por ejemplo, cada etiqueta podría representar el centro donde se 
+ *   AppCRUE – Control de asistencia. API de integración 
+ *   REST 7
+ *   imparte la asignatura, el departamento, la titulación, etc. Su valor no debe incluir espacios 
+ *   en blanco. Es un parámetro opcional.
  * @package    local_scheduletool
  * @copyright  2021 University of Valladoild, Spain
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
