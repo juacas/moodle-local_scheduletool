@@ -263,6 +263,7 @@ class course_target extends modattendance_target
         $topics = [];
 
         $courses = get_user_capability_course('mod/attendance:addinstance', $user->id);
+        lib::log_info("Courses for user $user->id: " . json_encode($courses));
         if (empty($courses)) {
             return $topics;
         }
